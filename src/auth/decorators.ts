@@ -34,6 +34,8 @@ export type Actor =
   | { type: 'CUSTOMER'; label: string }
   | { type: 'SYSTEM'; label?: string };
 
-export function actorOf(auth: AuthContext): Actor {
+export type UserActor = Extract<Actor, { type: 'USER' }>;
+
+export function actorOf(auth: AuthContext): UserActor {
   return { type: 'USER', userId: auth.userId, label: auth.userName };
 }

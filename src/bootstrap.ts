@@ -29,10 +29,10 @@ export function loadConfig(overrides: Record<string, string | undefined> = {}): 
 
 /** Builds the HTTP application. Shared by main.ts and integration tests. */
 export async function createApiApp(config: AppConfig, opts: { logger?: JsonLogger | false } = {}) {
-  const logger = opts.logger ?? new JsonLogger(config.env.LOG_LEVEL, 'api');
-  if (logger) setSharedLogger(logger);
+  const shared = opts.logger || new JsonLogger(config.env.LOG_LEVEL, 'api');
+  setSharedLogger(shared);
   const app = await NestFactory.create<NestExpressApplication>(AppModule.register(config), {
-    logger: logger || false,
+    logger: opts.logger === false ? false : shared,
     bodyParser: false,
   });
   app.set('trust proxy', parseTrustProxy(config.env.TRUST_PROXY));

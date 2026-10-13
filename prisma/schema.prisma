@@ -391,6 +391,8 @@ model SourceAsset {
   addedAt         DateTime              @default(now()) @db.Timestamptz(3)
   /// Removed from the working set. The row (and file) is kept while an agreement version references it.
   removedAt       DateTime?             @db.Timestamptz(3)
+  /// Stored file erased (only for removed sources that no agreement version references).
+  contentDeletedAt DateTime?            @db.Timestamptz(3)
 
   order          Order                @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
   transcripts    Transcript[]

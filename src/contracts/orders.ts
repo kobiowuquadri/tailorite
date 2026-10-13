@@ -59,12 +59,34 @@ export type UpdateOrderInput = z.infer<typeof UpdateOrderInput>;
 
 export const OrderView = z.enum(['active', 'archived', 'all']);
 
+export const ORDER_FILTERS = [
+  'drafts',
+  'needs_clarification',
+  'awaiting_approval',
+  'approved_not_started',
+  'due_soon',
+  'change_requested',
+] as const;
+export type OrderFilter = (typeof ORDER_FILTERS)[number];
+
+export const ORDER_FILTER_LABELS: Record<OrderFilter, string> = {
+  drafts: 'Draft orders',
+  needs_clarification: 'Needs clarification',
+  awaiting_approval: 'Awaiting customer approval',
+  approved_not_started: 'Approved, not started',
+  due_soon: 'Due within 7 days',
+  change_requested: 'Change requested by customer',
+};
+
+/** "Due soon" window used by the dashboard (includes overdue orders). */
+export const DUE_SOON_DAYS = 7;
+
 export const OrderListQuery = PaginationQuery.extend({
   search: z.string().trim().max(100).optional(),
   agreement: AgreementStatus.optional(),
   production: ProductionStatus.optional(),
   /** Dashboard shortcuts. */
-  filter: z.enum(['approved_not_started', 'due_soon', 'change_requested']).optional(),
+  filter: z.enum(ORDER_FILTERS).optional(),
   customerId: Uuid.optional(),
   view: OrderView.default('active'),
 });

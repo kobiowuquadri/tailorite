@@ -10,6 +10,10 @@ import { QueueModule } from './jobs/queue.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { StudiosModule } from './studios/studios.module.js';
 import { HealthModule } from './health/health.module.js';
+import { CustomersModule } from './customers/customers.module.js';
+import { OrdersModule } from './orders/orders.module.js';
+import { SourcesModule } from './sources/sources.module.js';
+import { BriefsModule } from './briefs/briefs.module.js';
 import { CsrfGuard } from './common/security/csrf.guard.js';
 import { SessionGuard } from './auth/session.guard.js';
 import { AllExceptionsFilter } from './common/errors/http-exception.filter.js';
@@ -29,6 +33,10 @@ export class AppModule {
         QueueModule,
         AuthModule,
         StudiosModule,
+        CustomersModule,
+        OrdersModule,
+        SourcesModule,
+        BriefsModule,
         HealthModule,
       ],
       providers: [
