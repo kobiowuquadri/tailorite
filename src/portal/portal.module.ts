@@ -9,5 +9,6 @@ import { SourcesModule } from '../sources/sources.module.js';
   imports: [BriefsCoreModule, SourcesModule],
   controllers: [PortalController],
   providers: [PortalService, PortalSessionGuard],
+  exports: [PortalService],
 })
 export class PortalModule {}

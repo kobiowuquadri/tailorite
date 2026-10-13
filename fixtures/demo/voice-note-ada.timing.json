@@ -1,0 +1,21 @@
+{
+  "source": "System.Speech SpeakProgress events",
+  "durationMs": 9305,
+  "segments": [
+    {
+      "startMs": 0,
+      "endMs": 2880,
+      "text": "Please make the sleeves elbow length."
+    },
+    {
+      "startMs": 2880,
+      "endMs": 5965,
+      "text": "Keep the square neckline and no slit."
+    },
+    {
+      "startMs": 5965,
+      "endMs": 9305,
+      "text": "Can we add light beading around the neckline?"
+    }
+  ]
+}

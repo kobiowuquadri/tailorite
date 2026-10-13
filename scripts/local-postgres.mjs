@@ -7,7 +7,9 @@ import 'dotenv/config';
 import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import net from 'node:net';
+import pg from 'pg';
 import EmbeddedPostgres from 'embedded-postgres';
+import { pgIsRunning, pgStart, pgStop } from './pg-control.mjs';
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -16,9 +18,8 @@ if (!url) {
 }
 
 const parsed = new URL(url);
-const host = parsed.hostname;
-if (!['localhost', '127.0.0.1', '::1'].includes(host)) {
-  console.error(`DATABASE_URL points at "${host}". db:local only starts a server on localhost.`);
+if (!['localhost', '127.0.0.1', '::1'].includes(parsed.hostname)) {
+  console.error(`DATABASE_URL points at "${parsed.hostname}". db:local only starts a server on localhost.`);
   process.exit(1);
 }
 const port = Number(parsed.port || 5432);
@@ -26,6 +27,7 @@ const user = decodeURIComponent(parsed.username || 'postgres');
 const password = decodeURIComponent(parsed.password || 'postgres');
 const database = decodeURIComponent(parsed.pathname.replace(/^\//, '') || 'postgres');
 const dataDir = resolve(process.env.LOCAL_PG_DATA_DIR ?? '.local/postgres');
+const logFile = resolve(dataDir, '..', 'postgres.log');
 
 function portInUse(p) {
   return new Promise((done) => {
@@ -38,72 +40,66 @@ function portInUse(p) {
   });
 }
 
-if (await portInUse(port)) {
-  console.log(`Something is already listening on port ${port}; assuming PostgreSQL is running.`);
-  console.log('Stop the other server or change the port in DATABASE_URL to use the embedded one.');
-  // Stay alive so `concurrently -k` does not tear down the other processes.
-  setInterval(() => {}, 1 << 30);
+mkdirSync(dataDir, { recursive: true });
+let startedHere = false;
+
+if (await pgIsRunning(dataDir)) {
+  console.log(`PostgreSQL for ${dataDir} is already running; reusing it.`);
+} else if (await portInUse(port)) {
+  console.log(`Port ${port} is used by another server; assuming it is your PostgreSQL.`);
+  console.log('Stop it or change the port in DATABASE_URL to use the embedded one.');
+  setInterval(() => {}, 1 << 30); // keep `concurrently -k` from stopping the other processes
 } else {
-  mkdirSync(dataDir, { recursive: true });
-  const initialised = existsSync(resolve(dataDir, 'PG_VERSION'));
-  const pg = new EmbeddedPostgres({
-    databaseDir: dataDir,
-    user,
-    password,
-    port,
-    persistent: true,
-    authMethod: 'scram-sha-256',
-    // UTF-8 is required: customer names, the Naira sign and BullMQ's SQL all need it.
-    // (initdb on Windows otherwise defaults to the WIN1252 code page.)
-    initdbFlags: ['--encoding=UTF8', '--locale=C'],
-    onLog: () => {},
-    onError: (message) => {
-      const text = String(message ?? '');
-      if (text.trim()) console.error(`[postgres] ${text.trim()}`);
-    },
-  });
-
-  if (!initialised) {
+  if (!existsSync(resolve(dataDir, 'PG_VERSION'))) {
     console.log(`Initialising a new PostgreSQL cluster in ${dataDir} ...`);
-    await pg.initialise();
+    // initdb only: UTF-8 is required for customer names, the Naira sign and BullMQ's SQL
+    // (initdb on Windows otherwise defaults to the WIN1252 code page).
+    await new EmbeddedPostgres({
+      databaseDir: dataDir,
+      user,
+      password,
+      port,
+      authMethod: 'scram-sha-256',
+      initdbFlags: ['--encoding=UTF8', '--locale=C'],
+      onLog: () => {},
+      onError: () => {},
+    }).initialise();
   }
-  await pg.start();
-
-  const client = pg.getPgClient();
-  await client.connect();
-  const encoding = (await client.query('SHOW server_encoding')).rows[0].server_encoding;
-  if (encoding !== 'UTF8') {
-    await client.end();
-    await pg.stop();
-    console.error(
-      `The cluster in ${dataDir} uses ${encoding} encoding; Tailorite requires UTF8.\n` +
-        'Delete that folder (it only holds local development data) and run `pnpm db:local` again.',
-    );
-    process.exit(1);
-  }
-  const exists = await client.query('SELECT 1 FROM pg_database WHERE datname = $1', [database]);
-  if (exists.rowCount === 0) {
-    await client.query(
-      `CREATE DATABASE "${database.replaceAll('"', '""')}" ENCODING 'UTF8' TEMPLATE template0`,
-    );
-    console.log(`Created database "${database}".`);
-  }
-  await client.end();
-
-  console.log(`PostgreSQL is ready on localhost:${port} (database "${database}", user "${user}").`);
-
-  let stopping = false;
-  const stop = async () => {
-    if (stopping) return;
-    stopping = true;
-    console.log('Stopping PostgreSQL ...');
-    try {
-      await pg.stop();
-    } finally {
-      process.exit(0);
-    }
-  };
-  process.on('SIGINT', stop);
-  process.on('SIGTERM', stop);
-  process.on('SIGHUP', stop);
+  await pgStart({ dataDir, port, logFile });
+  startedHere = true;
 }
+
+const client = new pg.Client({ host: '127.0.0.1', port, user, password, database: 'postgres' });
+await client.connect();
+const encoding = (await client.query('SHOW server_encoding')).rows[0].server_encoding;
+if (encoding !== 'UTF8') {
+  await client.end();
+  if (startedHere) await pgStop(dataDir);
+  console.error(
+    `The cluster in ${dataDir} uses ${encoding} encoding; Tailorite requires UTF8.\n` +
+      'Delete that folder (it only holds local development data) and run `pnpm db:local` again.',
+  );
+  process.exit(1);
+}
+const exists = await client.query('SELECT 1 FROM pg_database WHERE datname = $1', [database]);
+if (exists.rowCount === 0) {
+  await client.query(`CREATE DATABASE "${database.replaceAll('"', '""')}" ENCODING 'UTF8' TEMPLATE template0`);
+  console.log(`Created database "${database}".`);
+}
+await client.end();
+console.log(`PostgreSQL is ready on localhost:${port} (database "${database}", user "${user}"). Logs: ${logFile}`);
+
+let stopping = false;
+const stop = async () => {
+  if (stopping) return;
+  stopping = true;
+  if (startedHere) {
+    console.log('Stopping PostgreSQL ...');
+    await pgStop(dataDir).catch((error) => console.error(error.message));
+  }
+  process.exit(0);
+};
+process.on('SIGINT', stop);
+process.on('SIGTERM', stop);
+process.on('SIGHUP', stop);
+setInterval(() => {}, 1 << 30);

@@ -123,9 +123,16 @@ export class StudiosService {
     const studio = await this.prisma.studio.findUniqueOrThrow({ where: { id: studioId } });
     const availability = this.config.aiAvailability({ isDemoSandbox: studio.isDemo && !studio.demoSeedKey });
     const startOfToday = startOfDayUtc(studio.timeZone, todayInZone(studio.timeZone));
-    const usedToday = await this.prisma.extractionJob.count({ where: { studioId, createdAt: { gte: startOfToday } } });
+    const [usedToday, heartbeat] = await Promise.all([
+      this.prisma.extractionJob.count({ where: { studioId, createdAt: { gte: startOfToday } } }),
+      this.prisma.workerHeartbeat.findFirst({ orderBy: { lastSeenAt: 'desc' } }),
+    ]);
     const e = this.config.env;
     return {
+      worker: {
+        online: Boolean(heartbeat && Date.now() - heartbeat.lastSeenAt.getTime() < 60_000),
+        lastSeenAt: heartbeat?.lastSeenAt.toISOString() ?? null,
+      },
       ...availability,
       models:
         availability.mode === 'live' && availability.available

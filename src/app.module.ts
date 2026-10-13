@@ -18,6 +18,9 @@ import { ApprovalsModule } from './approvals/approvals.module.js';
 import { PortalModule } from './portal/portal.module.js';
 import { ChangesModule } from './changes/changes.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { AiModule } from './ai/ai.module.js';
+import { JobsModule } from './jobs/jobs.module.js';
+import { DemoModule } from './demo/demo.module.js';
 import { CsrfGuard } from './common/security/csrf.guard.js';
 import { SessionGuard } from './auth/session.guard.js';
 import { AllExceptionsFilter } from './common/errors/http-exception.filter.js';
@@ -45,6 +48,9 @@ export class AppModule {
         PortalModule,
         ChangesModule,
         PaymentsModule,
+        AiModule,
+        JobsModule,
+        DemoModule,
         HealthModule,
       ],
       providers: [

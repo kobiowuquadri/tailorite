@@ -37,7 +37,7 @@ export function testConfig(overrides: Record<string, string> = {}): AppConfig {
       STORAGE_LOCAL_DIR: storageDir,
       JOB_QUEUE_BACKEND: 'postgres',
       AI_MODE: 'off',
-      LOG_LEVEL: 'error',
+      LOG_LEVEL: process.env.TEST_LOG_LEVEL ?? 'error',
       ...overrides,
     }),
   );

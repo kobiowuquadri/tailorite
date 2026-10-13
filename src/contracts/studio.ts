@@ -65,6 +65,8 @@ export type AiStatusDto = {
   message: string;
   models: { extraction: string; transcription: string } | null;
   limits: { jobsPerDay: number; usedToday: number; maxSourcesPerJob: number };
+  /** Whether a background worker has reported in within the last minute. */
+  worker: { online: boolean; lastSeenAt: string | null };
 };
 
 /** Pricing is a hypothesis; billing is not active in this release. */

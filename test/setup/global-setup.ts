@@ -4,14 +4,19 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import net from 'node:net';
 import { resolve } from 'node:path';
+import pg from 'pg';
 import EmbeddedPostgres from 'embedded-postgres';
 import type { TestProject } from 'vitest/node';
+import { pgStart, pgStop } from '../../scripts/pg-control.mjs';
 
 declare module 'vitest' {
   export interface ProvidedContext {
     databaseUrl: string;
   }
 }
+
+const USER = 'tailorite_test';
+const PASSWORD = 'tailorite_test';
 
 function freePort(): Promise<number> {
   return new Promise((done, fail) => {
@@ -36,42 +41,41 @@ export default async function setup(project: TestProject) {
 
   const dataDir = resolve('.local/test-postgres');
   mkdirSync(dataDir, { recursive: true });
+  // A previous run that was interrupted may have left the server running.
+  await pgStop(dataDir).catch(() => undefined);
+  if (!existsSync(resolve(dataDir, 'PG_VERSION'))) {
+    await new EmbeddedPostgres({
+      databaseDir: dataDir,
+      user: USER,
+      password: PASSWORD,
+      authMethod: 'scram-sha-256',
+      initdbFlags: ['--encoding=UTF8', '--locale=C'],
+      onLog: () => {},
+      onError: () => {},
+    }).initialise();
+  }
   const port = await freePort();
-  const pg = new EmbeddedPostgres({
-    databaseDir: dataDir,
-    user: 'tailorite_test',
-    password: 'tailorite_test',
-    port,
-    persistent: true,
-    authMethod: 'scram-sha-256',
-    initdbFlags: ['--encoding=UTF8', '--locale=C'],
-    onLog: () => {},
-    onError: () => {},
-  });
-  if (!existsSync(resolve(dataDir, 'PG_VERSION'))) await pg.initialise();
-  await pg.start();
+  await pgStart({ dataDir, port, logFile: resolve(dataDir, '..', 'test-postgres.log') });
 
   const database = `tailorite_test_${Date.now()}`;
-  const client = pg.getPgClient();
-  await client.connect();
+  const admin = new pg.Client({ host: '127.0.0.1', port, user: USER, password: PASSWORD, database: 'postgres' });
+  await admin.connect();
   // Remove databases left behind by interrupted runs.
-  const stale = await client.query<{ datname: string }>(
-    "SELECT datname FROM pg_database WHERE datname LIKE 'tailorite_test_%'",
-  );
-  for (const row of stale.rows) await client.query(`DROP DATABASE IF EXISTS "${row.datname}" WITH (FORCE)`);
-  await client.query(`CREATE DATABASE "${database}" ENCODING 'UTF8' TEMPLATE template0`);
-  await client.end();
+  const stale = await admin.query<{ datname: string }>("SELECT datname FROM pg_database WHERE datname LIKE 'tailorite_test_%'");
+  for (const row of stale.rows) await admin.query(`DROP DATABASE IF EXISTS "${row.datname}" WITH (FORCE)`);
+  await admin.query(`CREATE DATABASE "${database}" ENCODING 'UTF8' TEMPLATE template0`);
+  await admin.end();
 
-  const url = `postgresql://tailorite_test:tailorite_test@127.0.0.1:${port}/${database}`;
+  const url = `postgresql://${USER}:${PASSWORD}@127.0.0.1:${port}/${database}`;
   migrate(url);
   project.provide('databaseUrl', url);
 
   return async () => {
-    const admin = pg.getPgClient();
-    await admin.connect();
-    await admin.query(`DROP DATABASE IF EXISTS "${database}" WITH (FORCE)`);
-    await admin.end();
-    await pg.stop();
+    const cleanup = new pg.Client({ host: '127.0.0.1', port, user: USER, password: PASSWORD, database: 'postgres' });
+    await cleanup.connect();
+    await cleanup.query(`DROP DATABASE IF EXISTS "${database}" WITH (FORCE)`);
+    await cleanup.end();
+    await pgStop(dataDir);
   };
 }
 
