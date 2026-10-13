@@ -14,6 +14,10 @@ import { CustomersModule } from './customers/customers.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { SourcesModule } from './sources/sources.module.js';
 import { BriefsModule } from './briefs/briefs.module.js';
+import { ApprovalsModule } from './approvals/approvals.module.js';
+import { PortalModule } from './portal/portal.module.js';
+import { ChangesModule } from './changes/changes.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { CsrfGuard } from './common/security/csrf.guard.js';
 import { SessionGuard } from './auth/session.guard.js';
 import { AllExceptionsFilter } from './common/errors/http-exception.filter.js';
@@ -37,6 +41,10 @@ export class AppModule {
         OrdersModule,
         SourcesModule,
         BriefsModule,
+        ApprovalsModule,
+        PortalModule,
+        ChangesModule,
+        PaymentsModule,
         HealthModule,
       ],
       providers: [
