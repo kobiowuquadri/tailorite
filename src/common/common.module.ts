@@ -1,0 +1,9 @@
+import { Global, Module } from '@nestjs/common';
+import { RateLimitService } from './security/rate-limit.service.js';
+
+@Global()
+@Module({
+  providers: [RateLimitService],
+  exports: [RateLimitService],
+})
+export class CommonModule {}
