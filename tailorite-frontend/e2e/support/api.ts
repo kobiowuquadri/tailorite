@@ -42,7 +42,7 @@ export async function signUpStudio(page: Page, studioName = "Test Atelier") {
     city: "Lagos",
     measurementUnit: "INCH",
     timeZone: "Africa/Lagos",
-    currency: "NGN",
+    currency: "USD",
   });
   return api;
 }
@@ -58,7 +58,7 @@ export async function createOrder(api: APIRequestContext, customerId: string, ti
 type Field = { value: string | null; notApplicable: boolean; note: string | null; evidence: unknown[]; origin: "MANUAL" };
 const field = (value: string | null): Field => ({ value, notApplicable: false, note: null, evidence: [], origin: "MANUAL" });
 
-/** The demo scenario's confirmed V1 (₦85,000, deposit ₦30,000). */
+/** The demo scenario's confirmed V1 ($850, deposit $300). */
 export function completeBrief(overrides: { totalPriceKobo?: number; deliveryDate?: string; embellishments?: string } = {}) {
   return {
     schemaVersion: 1,
@@ -95,8 +95,8 @@ export function completeBrief(overrides: { totalPriceKobo?: number; deliveryDate
       notNeededReason: null,
     },
     terms: {
-      totalPriceKobo: overrides.totalPriceKobo ?? 8_500_000,
-      depositRequiredKobo: 3_000_000,
+      totalPriceKobo: overrides.totalPriceKobo ?? 85_000,
+      depositRequiredKobo: 30_000,
       deliveryDate: overrides.deliveryDate ?? futureDate(21),
       fittingDate: null,
       paymentNote: "Deposit before cutting; balance on collection.",

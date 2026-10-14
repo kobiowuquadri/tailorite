@@ -8,6 +8,7 @@ import {
   BriefContent,
   fieldLabel,
   formatIsoDate,
+  formatMoney,
   SUGGESTION_KEYS,
   type AcceptSuggestionInput,
   type BriefDto,
@@ -62,7 +63,7 @@ function scalarText(value: unknown): string {
 function displayValue(key: string, value: unknown): string {
   if (value === null || value === undefined) return 'Unknown';
   if ((key === 'totalPrice' || key === 'depositRequired') && typeof value === 'number') {
-    return `₦${value.toLocaleString('en-NG')}`;
+    return formatMoney(Math.round(value * 100));
   }
   if ((key === 'deliveryDate' || key === 'fittingDate') && typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return formatIsoDate(value);

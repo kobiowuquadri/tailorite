@@ -2,7 +2,7 @@ import { devices, expect, type Browser, type Page } from "@playwright/test";
 
 /** A separate phone browser for the customer (no studio cookies). */
 export async function customerPhone(browser: Browser) {
-  const context = await browser.newContext({ ...devices["Pixel 7"], timezoneId: "Africa/Lagos", locale: "en-NG" });
+  const context = await browser.newContext({ ...devices["Pixel 7"], timezoneId: "Africa/Lagos", locale: "en-US" });
   return context.newPage();
 }
 

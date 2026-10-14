@@ -66,7 +66,7 @@ export default function DemoPage() {
               src={photos.atelierFitting.src}
               alt=""
               fill
-              priority
+              preload
               placeholder="blur"
               sizes="(min-width: 768px) 768px, 100vw"
               className="animate-drift object-cover object-[50%_20%]"

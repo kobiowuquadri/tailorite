@@ -44,7 +44,7 @@ export class DemoService {
         city: 'Lagos',
         measurementUnit: 'INCH',
         timeZone: 'Africa/Lagos',
-        currency: 'NGN',
+        currency: 'USD',
       });
       await this.prisma.studio.update({
         where: { id: studio.id },
@@ -99,7 +99,7 @@ export class DemoService {
       city: 'Lagos',
       measurementUnit: 'INCH',
       timeZone: 'Africa/Lagos',
-      currency: 'NGN',
+      currency: 'USD',
     });
     await this.prisma.studio.update({ where: { id: studio.id }, data: { isDemo: true, demoSeedKey: DEMO.seedKey } });
     const { demoOrderId } = await this.scenario.build(studio.id, { type: 'USER', userId: user.id, label: DEMO.ownerName });

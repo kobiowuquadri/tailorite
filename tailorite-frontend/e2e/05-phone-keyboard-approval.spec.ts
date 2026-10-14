@@ -12,7 +12,7 @@ test("the customer can review and approve on a phone using only the keyboard", a
   expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
   const approve = phone.getByRole("button", { name: "Approve this version" });
   await expect(approve).toBeInViewport();
-  await expect(phone.getByText("₦85,000").first()).toBeVisible();
+  await expect(phone.getByText("$850").first()).toBeVisible();
 
   // Keyboard only: tab to the approval button and open the sheet.
   for (let i = 0; i < 40 && !(await approve.evaluate((el) => el === document.activeElement)); i++) await phone.keyboard.press("Tab");

@@ -121,6 +121,8 @@ Give each app a domain under **Domain names** (free `*.cleverapps.io` names work
 ### 5. Optional: presenter demo studio
 The seed uploads demo media, so it must run with the production database **and** Cellar settings. From a machine with the repository: put `DATABASE_URL`, `STORAGE_DRIVER=s3`, `S3_ENDPOINT=https://cellar-c2.services.clever-cloud.com`, `S3_BUCKET`, `S3_REGION=default`, the Cellar keys, `NODE_ENV=production`, `ALLOW_DEMO_SEED=true`, a `SESSION_SECRET` and `DEMO_OWNER_PASSWORD` in `tailorite-backend/.env.production` (never commit it), then `pnpm build && node --env-file=.env.production dist/cli/demo-seed.js`. It only creates or resets the flagged "Amina Atelier" studio.
 
+The demo voice note and reference picture also ship with the app (`fixtures/demo`). If the live storage does not have a copy — for example the seed ran with local storage, or a free host's temporary disk was wiped by a restart — the API puts the file back from the bundled original the first time it is requested (matched by checksum; no other files qualify). So seeding with only `DATABASE_URL` set to the live database also works: `pnpm build && pnpm demo:seed`.
+
 ### Notes for this plan
 - The 5-connection limit is tight: while Clever Cloud swaps an old instance for a new one, both may briefly hold connections and some requests can fail with "too many connections". A larger PostgreSQL plan removes this.
 - Polling adds up to `JOB_POLL_INTERVAL_MS` (2 s) before an AI run starts.

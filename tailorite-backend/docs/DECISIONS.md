@@ -33,8 +33,8 @@ Publishing writes a `BriefVersion` with a canonical-JSON SHA-256 `contentHash` a
 ## D9 — AI model and modes
 Default model `gemini-3.8-flash` for extraction and transcription, taken from Google's Gemini API models page on 2026-10-13 (listed as stable and recommended for new projects). It is configurable (`GEMINI_EXTRACTION_MODEL`, `GEMINI_TRANSCRIPTION_MODEL`). A live call has not been made yet because no `GEMINI_API_KEY` is configured. Modes: `live`, `fixture` (prepared results for the synthetic demo sources only, always labelled "Example results"), `off` (manual mode). A deterministic fake provider exists for automated tests only (`NODE_ENV=test` and `AI_TEST_FAKE=true`).
 
-## D10 — Money in integer kobo
-All amounts are integer kobo (`BigInt` in PostgreSQL). `balanceDue = max(0, agreedTotal − netRecorded)` and any excess is shown separately as credit/refund due; nothing is silently clamped away. Corrections are reversal entries.
+## D10 — Money in integer cents (US dollars)
+All amounts are integer cents of US dollars (`BigInt` in PostgreSQL). Tailorite started in naira; when it moved to US dollars (migration `20261014160000_currency_usd`) the stored integers kept their meaning as hundredths of the currency, so only the currency code changed. Field and column names ending in `Kobo` were kept: approved versions are sealed, fingerprinted snapshots that use those keys, and renaming them would break verification of existing approvals. `balanceDue = max(0, agreedTotal − netRecorded)` and any excess is shown separately as credit/refund due; nothing is silently clamped away. Corrections are reversal entries.
 
 ## D11 — Storage image for Compose
 MinIO stopped publishing community Docker images in October 2025. Compose uses Chainguard's free MinIO build (`cgr.dev/chainguard/minio`) as a drop-in; any S3-compatible service works through `S3_ENDPOINT`. The API creates the private bucket when `S3_CREATE_BUCKET=true` (default outside production), so no shell-based init container is needed.

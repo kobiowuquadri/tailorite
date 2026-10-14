@@ -1,6 +1,6 @@
 # Data model
 
-Schema: `prisma/schema.prisma`. Migrations: `prisma/migrations` (the second migration, `integrity_guards`, adds the database triggers and CHECK constraints described below). Identifiers are UUIDv7; timestamps are UTC; calendar dates (delivery, fitting, payment received) are `DATE` values interpreted in the studio's time zone (default `Africa/Lagos`). Money is integer kobo (`BIGINT`).
+Schema: `prisma/schema.prisma`. Migrations: `prisma/migrations` (the second migration, `integrity_guards`, adds the database triggers and CHECK constraints described below). Identifiers are UUIDv7; timestamps are UTC; calendar dates (delivery, fitting, payment received) are `DATE` values interpreted in the studio's time zone (chosen at onboarding). Money is integer cents of US dollars (`BIGINT`); columns ending in `Kobo` hold cents.
 
 ## Entities
 

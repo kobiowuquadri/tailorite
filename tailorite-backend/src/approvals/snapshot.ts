@@ -36,7 +36,7 @@ export function buildSnapshot(input: {
       phone: input.studio.phone,
       email: input.studio.email,
       city: input.studio.city,
-      currency: 'NGN',
+      currency: 'USD',
       timeZone: input.studio.timeZone,
     },
     customer: { name: input.customerName },

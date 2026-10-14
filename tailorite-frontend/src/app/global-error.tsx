@@ -3,7 +3,7 @@
 /** Last-resort error page (replaces the root layout, so it carries its own document and styles). */
 export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
-    <html lang="en-NG">
+    <html lang="en">
       <body style={{ margin: 0, fontFamily: "system-ui, 'Segoe UI', Helvetica, Arial, sans-serif", background: "#f6f8fb", color: "#101828" }}>
         <title>Something went wrong · Tailorite</title>
         <main style={{ maxWidth: 480, margin: "15vh auto", padding: 24, textAlign: "center" }}>

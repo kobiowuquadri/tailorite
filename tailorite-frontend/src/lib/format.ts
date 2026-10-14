@@ -1,6 +1,6 @@
-import { formatIsoDate, formatKobo } from "@/contracts/brief";
+import { formatIsoDate, formatMoney } from "@/contracts/brief";
 
-export { formatIsoDate, formatKobo };
+export { formatIsoDate, formatMoney };
 
 /** Event timestamps are stored in UTC and shown in the studio's time zone. */
 export function formatDateTime(iso: string | null | undefined, timeZone = "Africa/Lagos"): string {
@@ -69,18 +69,18 @@ export function formatDuration(ms: number | null | undefined): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/** Naira amount typed by a person → integer kobo. Accepts "85,000" or "85000.50". */
-export function nairaInputToKobo(input: string): number | null {
-  const cleaned = input.replace(/[₦,\s]/g, "");
+/** US dollar amount typed by a person → integer cents. Accepts "1,250" or "850.50". */
+export function moneyInputToCents(input: string): number | null {
+  const cleaned = input.replace(/[$,\s]/g, "");
   if (cleaned === "") return null;
   if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return Number.NaN;
   const [whole, fraction = ""] = cleaned.split(".");
   return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
 }
 
-export function koboToNairaInput(kobo: number | null | undefined): string {
+export function centsToMoneyInput(kobo: number | null | undefined): string {
   if (kobo === null || kobo === undefined) return "";
-  const naira = Math.trunc(kobo / 100);
+  const dollars = Math.trunc(kobo / 100);
   const rest = kobo % 100;
-  return rest ? `${naira}.${String(rest).padStart(2, "0")}` : String(naira);
+  return rest ? `${dollars}.${String(rest).padStart(2, "0")}` : String(dollars);
 }

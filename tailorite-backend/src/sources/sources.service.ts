@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { AppConfig } from '../config/app-config.js';
 import { Errors } from '../common/errors/app-error.js';
@@ -25,6 +26,7 @@ import {
 import { lockOrder } from '../orders/order-lock.js';
 import { MediaRejected, probeAudio, processImage, sanitizeFileName, sniffMedia } from './media.js';
 import { logger } from '../common/logging/json-logger.js';
+import { DEMO_AUDIO_FILE, DEMO_IMAGE_FILE, demoAssetHashes } from '../demo/demo-content.js';
 
 export const sourceInclude = {
   transcripts: { orderBy: { createdAt: 'desc' }, take: 1 },
@@ -412,7 +414,17 @@ export class SourcesService {
 
   /** Shared by the studio and the customer portal after their own authorization checks. */
   async openSourceFile(
-    source: { kind: SourceKind; storageKey: string | null; previewKey: string | null; mimeType: string | null; byteSize: number | null; label: string; contentDeletedAt: Date | null; originalName: string | null },
+    source: {
+      kind: SourceKind;
+      sha256: string;
+      storageKey: string | null;
+      previewKey: string | null;
+      mimeType: string | null;
+      byteSize: number | null;
+      label: string;
+      contentDeletedAt: Date | null;
+      originalName: string | null;
+    },
     variant: 'original' | 'preview',
     rangeHeader: string | undefined,
   ): Promise<{ object: StoredObject; mime: string; fileName: string } | 'unsatisfiable'> {
@@ -428,8 +440,43 @@ export class SourcesService {
       if (parsed === 'unsatisfiable') return 'unsatisfiable';
       range = parsed;
     }
-    const object = await this.storage.get(key, range ?? undefined);
+    let object: StoredObject;
+    try {
+      object = await this.storage.get(key, range ?? undefined);
+    } catch (error) {
+      if (!(await this.restoreBundledDemoFile(source))) throw error;
+      object = await this.storage.get(key, range ?? undefined);
+    }
     return { object, mime, fileName };
+  }
+
+  /**
+   * The demo voice note and picture ship with the app (fixtures/demo). When storage no longer has a copy — for
+   * example a free host's temporary disk after a restart, or a demo studio seeded from another machine — the file
+   * is put back from the bundled original. Only files whose checksum matches a bundled demo file qualify.
+   */
+  private async restoreBundledDemoFile(source: {
+    kind: SourceKind;
+    sha256: string;
+    storageKey: string | null;
+    previewKey: string | null;
+    mimeType: string | null;
+  }): Promise<boolean> {
+    const hashes = demoAssetHashes();
+    const file = source.sha256 === hashes.audio ? DEMO_AUDIO_FILE : source.sha256 === hashes.image ? DEMO_IMAGE_FILE : null;
+    if (!file || !source.storageKey) return false;
+    try {
+      const buffer = await readFile(file);
+      await this.storage.put(source.storageKey, buffer, source.mimeType ?? 'application/octet-stream');
+      if (source.kind === 'IMAGE' && source.previewKey) {
+        await this.storage.put(source.previewKey, (await processImage(buffer)).preview, 'image/webp');
+      }
+      logger().event('info', 'demo_media_restored', { storageKey: source.storageKey });
+      return true;
+    } catch (error) {
+      logger().event('warn', 'demo_media_restore_failed', { storageKey: source.storageKey, error: (error as Error).message });
+      return false;
+    }
   }
 
   async correctTranscript(

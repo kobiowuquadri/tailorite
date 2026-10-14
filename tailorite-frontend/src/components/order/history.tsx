@@ -9,7 +9,7 @@ import { ErrorState } from "@/components/common/states";
 import { shortHash } from "@/components/order/agreement-section";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
-import { formatCalendarDate, formatDateTime, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatDateTime, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { VERSION_STATUS_LABELS, type OrderDetailDto, type VersionStatus } from "@/contracts/orders";
 import type { TimelineEventDto } from "@/contracts/timeline";
@@ -48,7 +48,7 @@ export function VersionHistory({ order, timeZone }: { order: OrderDetailDto; tim
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {formatKobo(v.totalPriceKobo)} · delivery {formatCalendarDate(v.deliveryDate, "short")} · shared{" "}
+                  {formatMoney(v.totalPriceKobo)} · delivery {formatCalendarDate(v.deliveryDate, "short")} · shared{" "}
                   {formatDateTime(v.publishedAt, timeZone)} · Ref {shortHash(v.contentHash)}
                 </p>
                 {v.decision ? (

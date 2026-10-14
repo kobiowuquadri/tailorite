@@ -54,6 +54,6 @@ Failures are shown to the tailor in plain language with "Your brief was not chan
 
 ## Known limitations
 
-- No live verification yet (see above). Model quality on Nigerian English, Pidgin, Yoruba, Igbo and Hausa voice notes is unmeasured.
+- No live verification yet (see above). Model quality on accented English, dialects and non-English voice notes is unmeasured.
 - Images are only described as visual observations; the system does not infer measurements from photos by design.
 - One run processes all of an order's current sources; there is no per-source selection.

@@ -9,11 +9,15 @@ export const Uuid = z.uuid('Invalid identifier');
 /** Calendar date without time (YYYY-MM-DD), interpreted in the studio's time zone. */
 export const IsoDate = z.iso.date('Use a date in YYYY-MM-DD format');
 
-/** Money is always integer kobo (₦1 = 100 kobo). Upper bound ₦1,000,000,000. */
+/**
+ * Money is always an integer number of cents (US$1 = 100 cents). Upper bound $1,000,000,000.
+ * Field names ending in `Kobo` date from before the switch to US dollars; they are kept because approved
+ * versions are sealed snapshots that use those keys. They hold cents.
+ */
 export const MAX_KOBO = 100_000_000_000;
 export const Kobo = z
   .number('Enter an amount')
-  .int('Amounts are whole kobo')
+  .int('Amounts are whole cents')
   .min(0, 'Amount cannot be negative')
   .max(MAX_KOBO, 'Amount is too large');
 export const PositiveKobo = Kobo.min(1, 'Amount must be greater than zero');

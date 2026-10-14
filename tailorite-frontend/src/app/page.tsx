@@ -17,9 +17,11 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
+import { Hero } from "@/components/marketing/hero";
 import { ReviewPreview } from "@/components/marketing/review-preview";
+import { SiteFooter } from "@/components/marketing/site-footer";
 import { PRICING_HYPOTHESIS } from "@/contracts/studio";
-import { formatKobo } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { photos, type Photo } from "@/assets/images";
 
@@ -71,11 +73,11 @@ const TRUST = [
 ];
 
 export default function LandingPage() {
-  const price = formatKobo(PRICING_HYPOTHESIS.proposedPricePerApprovedOrderKobo);
+  const price = formatMoney(PRICING_HYPOTHESIS.proposedPricePerApprovedOrderKobo);
   return (
     <div className="flex min-h-dvh flex-col bg-white">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-white/90 backdrop-blur supports-backdrop-filter:bg-white/75">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Tailorite home">
             <Logo />
           </Link>
@@ -97,36 +99,7 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        <section className="overflow-hidden bg-gradient-to-b from-blue-tint/70 to-white">
-          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:py-20">
-            <div className="space-y-6">
-              <p className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-[#c9dcff] bg-white px-3 py-1 text-xs font-medium text-blue-ink">
-                For tailors and fashion designers in Nigeria
-              </p>
-              <h1 className="animate-fade-up text-4xl font-bold tracking-tight text-balance sm:text-5xl" style={{ ["--i" as string]: 1 }}>
-                Every detail agreed. Every stitch understood.
-              </h1>
-              <p className="animate-fade-up max-w-xl text-lg text-[#3d4757]" style={{ ["--i" as string]: 2 }}>
-                Tailorite turns a customer&apos;s messages, reference pictures and voice notes into a clear brief they approve on their phone —
-                before you cut the fabric. When something changes later, they see exactly what changes and what it costs.
-              </p>
-              <div className="animate-fade-up flex flex-wrap gap-3" style={{ ["--i" as string]: 3 }}>
-                <Button asChild size="lg" className="group h-12 px-5 text-base">
-                  <Link href="/register">
-                    Create your first order <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="h-12 bg-white px-5 text-base">
-                  <Link href="/demo">Explore demo</Link>
-                </Button>
-              </div>
-              <p className="animate-fade-up text-sm text-muted-foreground" style={{ ["--i" as string]: 4 }}>
-                Free while in beta. The demo uses a private sandbox with synthetic data — no sign-up needed.
-              </p>
-            </div>
-            <HeroVisual />
-          </div>
-        </section>
+        <Hero />
 
         <section
           aria-labelledby="problem"
@@ -154,28 +127,37 @@ export default function LandingPage() {
         </section>
 
         <section id="how" aria-labelledby="how-title" className="scroll-mt-16 bg-canvas">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-            <h2 id="how-title" className="reveal text-2xl font-semibold tracking-tight sm:text-3xl">
-              How it works
-            </h2>
-            <ol className="mt-8 grid gap-4 md:grid-cols-3">
-              {STEPS.map((s, i) => (
-                <li key={s.title} className="reveal hover-lift rounded-xl border border-border bg-white p-5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16 lg:py-24">
+            <div>
+              <h2 id="how-title" className="reveal text-2xl font-semibold tracking-tight sm:text-3xl">
+                How it works
+              </h2>
+              <ol className="mt-8 space-y-4">
+                {STEPS.map((s, i) => (
+                  <li key={s.title} className="reveal hover-lift flex gap-4 rounded-xl border border-border bg-white p-5">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                       {i + 1}
                     </span>
-                    <s.icon className="size-5 text-blue-ink" aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-4 font-semibold">{s.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-              <Mic className="size-4" aria-hidden="true" /> Voice notes are transcribed with timestamps, so you can jump to the exact moment a
-              detail was said.
-            </p>
+                    <div>
+                      <h3 className="flex items-center gap-2 font-semibold">
+                        {s.title}
+                        <s.icon className="size-4 text-blue-ink" aria-hidden="true" />
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <p className="reveal mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+                <Mic className="size-4 shrink-0" aria-hidden="true" /> Voice notes are transcribed with timestamps, so you can jump to the exact
+                moment a detail was said.
+              </p>
+            </div>
+            <div className="reveal">
+              <div className="animate-float">
+                <ReviewPreview />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -275,55 +257,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm text-muted-foreground sm:px-6">
-          <span className="inline-flex items-center gap-2">
-            <Logo className="scale-90" /> <span className="hidden sm:inline">· Beta</span>
-          </span>
-          <nav aria-label="Footer" className="flex flex-wrap gap-4">
-            <Link href="/login" className="hover:text-foreground">
-              Sign in
-            </Link>
-            <Link href="/register" className="hover:text-foreground">
-              Create an account
-            </Link>
-            <Link href="/demo" className="hover:text-foreground">
-              Demo
-            </Link>
-            <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
-              Photos: Pexels
-            </a>
-          </nav>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-/** Studio photo with the customer review screen floating over it. */
-function HeroVisual() {
-  return (
-    <div className="relative mx-auto w-full max-w-md lg:max-w-none lg:pb-6">
-      <div className="animate-scale-in relative aspect-[4/3] overflow-hidden rounded-3xl bg-[#0b1b33] shadow-[0_30px_60px_-30px_rgb(11_27_51/0.55)] sm:aspect-[5/4] lg:ml-auto lg:aspect-[4/5] lg:w-[78%]">
-        <Image
-          src={photos.designerAnkara.src}
-          alt={photos.designerAnkara.alt}
-          fill
-          priority
-          placeholder="blur"
-          sizes="(min-width: 1024px) 400px, (min-width: 640px) 448px, 100vw"
-          className="animate-drift object-cover object-[50%_30%]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b1b33]/30 via-transparent to-transparent" />
-      </div>
-      <div
-        className="animate-fade-up relative -mt-24 sm:-mt-32 lg:absolute lg:bottom-0 lg:left-0 lg:mt-0 lg:w-[340px]"
-        style={{ ["--i" as string]: 4 }}
-      >
-        <div className="animate-float [zoom:0.9] lg:[zoom:0.8]">
-          <ReviewPreview />
-        </div>
-      </div>
+      <SiteFooter />
     </div>
   );
 }

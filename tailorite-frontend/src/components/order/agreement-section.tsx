@@ -34,7 +34,7 @@ import { ReasonDialog } from "@/components/order/reason-dialog";
 import { api, isApiError } from "@/lib/api";
 import { invalidateOrder } from "@/lib/queries";
 import { toastError } from "@/lib/form-errors";
-import { formatCalendarDate, formatDateTime, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatDateTime, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { OrderDetailDto, VersionSummaryDto } from "@/contracts/orders";
 import type { PortalAccessDto } from "@/contracts/approvals";
@@ -44,11 +44,11 @@ function Terms({ v }: { v: VersionSummaryDto }) {
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
       <div>
         <dt className="text-xs text-muted-foreground">Total price</dt>
-        <dd className="font-semibold tabular">{formatKobo(v.totalPriceKobo)}</dd>
+        <dd className="font-semibold tabular">{formatMoney(v.totalPriceKobo)}</dd>
       </div>
       <div>
         <dt className="text-xs text-muted-foreground">Deposit required</dt>
-        <dd className="font-semibold tabular">{formatKobo(v.depositRequiredKobo)}</dd>
+        <dd className="font-semibold tabular">{formatMoney(v.depositRequiredKobo)}</dd>
       </div>
       <div>
         <dt className="text-xs text-muted-foreground">Delivery date</dt>

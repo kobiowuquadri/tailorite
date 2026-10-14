@@ -45,7 +45,7 @@ export type PaymentDto = {
 };
 
 export type FinanceDto = {
-  currency: 'NGN';
+  currency: 'USD';
   /** Terms of the active approved version (the agreement in force). */
   agreed: { versionNumber: number; totalKobo: number; depositRequiredKobo: number } | null;
   /** Proposed terms that are not yet agreed (draft or version awaiting approval). */

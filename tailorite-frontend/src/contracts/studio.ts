@@ -14,16 +14,26 @@ export const MEASUREMENT_UNIT_SHORT: Record<MeasurementUnit, string> = { INCH: '
 
 /** Time zones offered in the UI. The API accepts any valid IANA zone. */
 export const COMMON_TIME_ZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Toronto',
+  'America/Sao_Paulo',
+  'Europe/London',
+  'Europe/Paris',
   'Africa/Lagos',
   'Africa/Accra',
-  'Africa/Abidjan',
   'Africa/Nairobi',
   'Africa/Johannesburg',
-  'Europe/London',
-  'America/New_York',
+  'Asia/Dubai',
+  'Asia/Kolkata',
+  'Asia/Singapore',
+  'Australia/Sydney',
+  'UTC',
 ] as const;
 
-export const SUPPORTED_CURRENCIES = ['NGN'] as const;
+export const SUPPORTED_CURRENCIES = ['USD'] as const;
 
 const studioFields = {
   studioName: z.string().trim().min(2, 'Enter the studio name').max(80),
@@ -37,7 +47,7 @@ const studioFields = {
   city: optionalText(80),
   measurementUnit: MeasurementUnit,
   timeZone: z.string().trim().min(3).max(64).default('Africa/Lagos'),
-  currency: z.enum(SUPPORTED_CURRENCIES).default('NGN'),
+  currency: z.enum(SUPPORTED_CURRENCIES).default('USD'),
 };
 
 export const OnboardingInput = z.object(studioFields);
@@ -53,7 +63,7 @@ export type StudioDto = {
   phone: string | null;
   email: string | null;
   city: string | null;
-  currency: 'NGN';
+  currency: 'USD';
   timeZone: string;
   measurementUnit: MeasurementUnit;
   isDemo: boolean;
@@ -76,7 +86,7 @@ export type AiStatusDto = {
 /** Pricing is a hypothesis; billing is not active in this release. */
 export const PRICING_HYPOTHESIS = {
   freeApprovedOrders: 3,
-  proposedPricePerApprovedOrderKobo: 50_000,
+  proposedPricePerApprovedOrderKobo: 100,
   billingActive: false,
 } as const;
 

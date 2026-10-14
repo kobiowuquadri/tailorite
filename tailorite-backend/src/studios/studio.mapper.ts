@@ -9,7 +9,7 @@ export function toStudioDto(s: Studio): StudioDto {
     phone: s.phone,
     email: s.email,
     city: s.city,
-    currency: 'NGN',
+    currency: 'USD',
     timeZone: s.timeZone,
     measurementUnit: s.measurementUnit,
     isDemo: s.isDemo,

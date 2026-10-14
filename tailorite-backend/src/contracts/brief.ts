@@ -413,11 +413,13 @@ export type PresentedRow = {
 
 export type PresentedSection = { key: string; title: string; rows: PresentedRow[] };
 
-export function formatKobo(kobo: number | null | undefined): string {
-  if (kobo === null || kobo === undefined) return '—';
-  const naira = kobo / 100;
-  return `₦${naira.toLocaleString('en-NG', {
-    minimumFractionDigits: Number.isInteger(naira) ? 0 : 2,
+/** Cents → "$850" or "$850.50". */
+export function formatMoney(cents: number | null | undefined): string {
+  if (cents === null || cents === undefined) return '—';
+  const dollars = cents / 100;
+  const sign = dollars < 0 ? '-' : '';
+  return `${sign}$${Math.abs(dollars).toLocaleString('en-US', {
+    minimumFractionDigits: Number.isInteger(dollars) ? 0 : 2,
     maximumFractionDigits: 2,
   })}`;
 }
@@ -477,8 +479,8 @@ function measurementsRows(m: BriefMeasurements, terms: BriefTerms): PresentedRow
 
 function termsRows(t: BriefTerms): PresentedRow[] {
   return [
-    { key: 'terms.totalPrice', label: 'Total price', value: formatKobo(t.totalPriceKobo), note: null, notApplicable: false, empty: t.totalPriceKobo === null },
-    { key: 'terms.deposit', label: 'Deposit required', value: formatKobo(t.depositRequiredKobo), note: t.paymentNote, notApplicable: false, empty: t.depositRequiredKobo === null },
+    { key: 'terms.totalPrice', label: 'Total price', value: formatMoney(t.totalPriceKobo), note: null, notApplicable: false, empty: t.totalPriceKobo === null },
+    { key: 'terms.deposit', label: 'Deposit required', value: formatMoney(t.depositRequiredKobo), note: t.paymentNote, notApplicable: false, empty: t.depositRequiredKobo === null },
     { key: 'terms.deliveryDate', label: 'Delivery date', value: formatIsoDate(t.deliveryDate), note: null, notApplicable: false, empty: !t.deliveryDate },
     { key: 'terms.fittingDate', label: 'Fitting date', value: t.fittingDate ? formatIsoDate(t.fittingDate) : 'No fitting scheduled', note: null, notApplicable: false, empty: !t.fittingDate },
   ];

@@ -18,7 +18,7 @@ Honest list of what this release does not do, or has not verified.
 - Customers are identified by link possession and a typed name — not verified identity or a legal signature.
 - Printing uses the browser's "Save as PDF"; there is no server-generated PDF.
 - No data export, account deletion, password reset, email verification, MFA or staff accounts yet.
-- AI processes all of an order's current sources in one run; it cannot be pointed at a subset. Its quality on Nigerian English, Pidgin, Yoruba, Igbo and Hausa voice notes is unmeasured.
+- AI processes all of an order's current sources in one run; it cannot be pointed at a subset. Its quality on accented English, dialects and non-English voice notes is unmeasured.
 
 ## Technical
 - Uploads are buffered in API memory (≤ 25 MB per file) and media is streamed through the API rather than from signed URLs or a CDN.

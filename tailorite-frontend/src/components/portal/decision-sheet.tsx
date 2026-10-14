@@ -10,7 +10,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api";
-import { formatCalendarDate, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatMoney } from "@/lib/format";
 import { PortalChangeRequestInput, PortalDecisionInput, type PortalReviewDto } from "@/contracts/approvals";
 
 export type PortalAction = "APPROVE" | "REQUEST_CHANGES" | "DECLINE" | "CHANGE_REQUEST";
@@ -142,11 +142,11 @@ export function DecisionSheet({
             <dl className="grid grid-cols-2 gap-3 rounded-xl bg-canvas p-4 text-sm">
               <div>
                 <dt className="text-muted-foreground">Total price</dt>
-                <dd className="text-base font-semibold tabular">{formatKobo(review.terms.totalPriceKobo)}</dd>
+                <dd className="text-base font-semibold tabular">{formatMoney(review.terms.totalPriceKobo)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Deposit</dt>
-                <dd className="text-base font-semibold tabular">{formatKobo(review.terms.depositRequiredKobo)}</dd>
+                <dd className="text-base font-semibold tabular">{formatMoney(review.terms.depositRequiredKobo)}</dd>
               </div>
               <div className="col-span-2">
                 <dt className="text-muted-foreground">Delivery date</dt>

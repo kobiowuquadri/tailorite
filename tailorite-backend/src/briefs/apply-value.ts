@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   FIELD_DEF_BY_KEY,
+  formatMoney,
   TEXT_FIELD_KEYS,
   type BriefContent,
   type Evidence,
@@ -12,17 +13,17 @@ import { Errors } from '../common/errors/app-error.js';
 
 const isTextKey = (key: string): key is TextFieldKey => (TEXT_FIELD_KEYS as readonly string[]).includes(key);
 
-/** "₦85,000", "85000", "85k", 85000 → kobo. Values are naira as written by people. */
-export function parseNairaToKobo(value: string | number): number | null {
+/** "$850", "850", "850.50", "1.2k", 850 → cents. Values are US dollars as written by people. */
+export function parseMoneyToCents(value: string | number): number | null {
   if (typeof value === 'number') {
     return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) : null;
   }
-  const cleaned = value.toLowerCase().replace(/naira|ngn|₦|,|\s/g, '');
+  const cleaned = value.toLowerCase().replace(/us\$|usd|dollars?|\$|,|\s/g, '');
   const match = /^(\d+(?:\.\d{1,2})?)(k|m)?$/.exec(cleaned);
   if (!match) return null;
   const multiplier = match[2] === 'k' ? 1_000 : match[2] === 'm' ? 1_000_000 : 1;
-  const kobo = Math.round(Number(match[1]) * multiplier * 100);
-  return kobo <= MAX_KOBO ? kobo : null;
+  const cents = Math.round(Number(match[1]) * multiplier * 100);
+  return cents <= MAX_KOBO ? cents : null;
 }
 
 export function parseIsoDateValue(value: string | number): string | null {
@@ -94,10 +95,10 @@ export function applyFieldValue(
     }
     case 'totalPrice':
     case 'depositRequired': {
-      const kobo = parseNairaToKobo(value);
-      if (kobo === null) throw Errors.validation('Enter the amount in naira, for example 85000.');
-      if (key === 'totalPrice') next.terms.totalPriceKobo = kobo;
-      else next.terms.depositRequiredKobo = kobo;
+      const cents = parseMoneyToCents(value);
+      if (cents === null) throw Errors.validation('Enter the amount in US dollars, for example 850.');
+      if (key === 'totalPrice') next.terms.totalPriceKobo = cents;
+      else next.terms.depositRequiredKobo = cents;
       return next;
     }
     case 'deliveryDate':
@@ -125,9 +126,9 @@ export function currentValueFor(content: BriefContent, key: string): string | nu
     case 'exclusion':
       return content.exclusions.length ? content.exclusions.map((e) => e.text).join('; ') : null;
     case 'totalPrice':
-      return content.terms.totalPriceKobo !== null ? `₦${(content.terms.totalPriceKobo / 100).toLocaleString('en-NG')}` : null;
+      return content.terms.totalPriceKobo !== null ? formatMoney(content.terms.totalPriceKobo) : null;
     case 'depositRequired':
-      return content.terms.depositRequiredKobo !== null ? `₦${(content.terms.depositRequiredKobo / 100).toLocaleString('en-NG')}` : null;
+      return content.terms.depositRequiredKobo !== null ? formatMoney(content.terms.depositRequiredKobo) : null;
     case 'deliveryDate':
       return content.terms.deliveryDate;
     case 'fittingDate':

@@ -17,11 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorState } from "@/components/common/states";
 import { ReasonDialog } from "@/components/order/reason-dialog";
-import { NairaInput } from "@/components/workbench/naira-input";
+import { MoneyInput } from "@/components/workbench/money-input";
 import { api, newIdempotencyKey } from "@/lib/api";
 import { invalidateOrder, qk } from "@/lib/queries";
 import { applyServerErrors } from "@/lib/form-errors";
-import { formatCalendarDate, formatDateTime, formatKobo, todayInZone } from "@/lib/format";
+import { formatCalendarDate, formatDateTime, formatMoney, todayInZone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { PAYMENT_KIND_LABELS, RecordPaymentInput, type FinanceDto, type PaymentDto } from "@/contracts/payments";
 import type { OrderDetailDto } from "@/contracts/orders";
@@ -84,7 +84,7 @@ function RecordPaymentDialog({
               const finance = await api<FinanceDto>(`/orders/${orderId}/payments`, { method: "POST", body: values });
               queryClient.setQueryData(qk.finance(orderId), finance);
               await invalidateOrder(queryClient, orderId);
-              toast.success(`${PAYMENT_KIND_LABELS[values.kind]}: ${formatKobo(values.amountKobo)} recorded`);
+              toast.success(`${PAYMENT_KIND_LABELS[values.kind]}: ${formatMoney(values.amountKobo)} recorded`);
               onOpenChange(false);
             } catch (error) {
               applyServerErrors(error, form.setError, ["kind", "amountKobo", "receivedOn", "method", "note"]);
@@ -126,7 +126,7 @@ function RecordPaymentDialog({
                   control={form.control}
                   name="amountKobo"
                   render={({ field }) => (
-                    <NairaInput
+                    <MoneyInput
                       id="payment-amount"
                       valueKobo={Number.isNaN(field.value) ? null : field.value}
                       onChange={(kobo) => field.onChange(kobo ?? Number.NaN)}
@@ -177,8 +177,8 @@ function RecordPaymentDialog({
 /** What the balance would become if the proposed total were approved (never shown as agreed). */
 function wouldBe(differenceKobo: number) {
   return differenceKobo >= 0
-    ? `If the customer approves, the balance becomes ${formatKobo(differenceKobo)}.`
-    : `If the customer approves, ${formatKobo(-differenceKobo)} becomes due back to the customer.`;
+    ? `If the customer approves, the balance becomes ${formatMoney(differenceKobo)}.`
+    : `If the customer approves, ${formatMoney(-differenceKobo)} becomes due back to the customer.`;
 }
 
 function Amount({ label, value, emphasis, tone }: { label: string; value: string; emphasis?: boolean; tone?: "coral" | "teal" }) {
@@ -227,7 +227,7 @@ function EntryRow({
         </p>
         {original ? (
           <p className="text-xs text-muted-foreground">
-            Corrects {PAYMENT_KIND_LABELS[original.kind].toLowerCase()} of {formatKobo(original.amountKobo)} from{" "}
+            Corrects {PAYMENT_KIND_LABELS[original.kind].toLowerCase()} of {formatMoney(original.amountKobo)} from{" "}
             {formatCalendarDate(original.receivedOn)}
           </p>
         ) : null}
@@ -237,10 +237,10 @@ function EntryRow({
       <div className="flex items-center gap-2">
         <span className={cn("tabular text-sm font-semibold", entry.signedAmountKobo < 0 && "text-coral-ink")}>
           {entry.signedAmountKobo < 0 ? "−" : "+"}
-          {formatKobo(Math.abs(entry.signedAmountKobo))}
+          {formatMoney(Math.abs(entry.signedAmountKobo))}
         </span>
         {canCorrect && entry.kind !== "REVERSAL" && !reversed ? (
-          <Button variant="ghost" size="sm" onClick={() => onCorrect(entry)} aria-label={`Correct ${PAYMENT_KIND_LABELS[entry.kind]} of ${formatKobo(entry.amountKobo)}`}>
+          <Button variant="ghost" size="sm" onClick={() => onCorrect(entry)} aria-label={`Correct ${PAYMENT_KIND_LABELS[entry.kind]} of ${formatMoney(entry.amountKobo)}`}>
             <Undo2 /> Correct
           </Button>
         ) : null}
@@ -293,17 +293,17 @@ export function PaymentsSection({ order, timeZone }: { order: OrderDetailDto; ti
           <>
             {f.agreed ? (
               <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <Amount label={`Agreed total (version ${f.agreed.versionNumber})`} value={formatKobo(f.agreed.totalKobo)} />
-                <Amount label="Received (recorded by studio)" value={formatKobo(f.received.netKobo)} />
+                <Amount label={`Agreed total (version ${f.agreed.versionNumber})`} value={formatMoney(f.agreed.totalKobo)} />
+                <Amount label="Received (recorded by studio)" value={formatMoney(f.received.netKobo)} />
                 {f.creditDueKobo && f.creditDueKobo > 0 ? (
-                  <Amount label="Credit / refund due to customer" value={formatKobo(f.creditDueKobo)} emphasis tone="coral" />
+                  <Amount label="Credit / refund due to customer" value={formatMoney(f.creditDueKobo)} emphasis tone="coral" />
                 ) : (
-                  <Amount label="Balance due" value={formatKobo(f.balanceDueKobo)} emphasis tone={f.balanceDueKobo === 0 ? "teal" : undefined} />
+                  <Amount label="Balance due" value={formatMoney(f.balanceDueKobo)} emphasis tone={f.balanceDueKobo === 0 ? "teal" : undefined} />
                 )}
                 {f.depositOutstandingKobo && f.depositOutstandingKobo > 0 ? (
-                  <Amount label="Deposit still to collect" value={formatKobo(f.depositOutstandingKobo)} tone="coral" />
+                  <Amount label="Deposit still to collect" value={formatMoney(f.depositOutstandingKobo)} tone="coral" />
                 ) : (
-                  <Amount label="Deposit required" value={formatKobo(f.agreed.depositRequiredKobo)} />
+                  <Amount label="Deposit required" value={formatMoney(f.agreed.depositRequiredKobo)} />
                 )}
               </dl>
             ) : (
@@ -312,12 +312,12 @@ export function PaymentsSection({ order, timeZone }: { order: OrderDetailDto; ti
                   There is no approved agreement yet, so there is no balance. Amounts below are estimates from the proposed terms.
                 </p>
                 <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  <Amount label="Proposed total (estimate)" value={formatKobo(f.proposed?.totalKobo)} />
-                  <Amount label="Received (recorded by studio)" value={formatKobo(f.received.netKobo)} />
+                  <Amount label="Proposed total (estimate)" value={formatMoney(f.proposed?.totalKobo)} />
+                  <Amount label="Received (recorded by studio)" value={formatMoney(f.received.netKobo)} />
                   {f.estimatedBalanceKobo !== null && f.estimatedBalanceKobo < 0 ? (
-                    <Amount label="Received above proposed total" value={formatKobo(-f.estimatedBalanceKobo)} tone="coral" />
+                    <Amount label="Received above proposed total" value={formatMoney(-f.estimatedBalanceKobo)} tone="coral" />
                   ) : (
-                    <Amount label="Estimated balance" value={formatKobo(f.estimatedBalanceKobo)} />
+                    <Amount label="Estimated balance" value={formatMoney(f.estimatedBalanceKobo)} />
                   )}
                 </dl>
               </div>
@@ -328,10 +328,10 @@ export function PaymentsSection({ order, timeZone }: { order: OrderDetailDto; ti
                 <CircleAlert className="mt-0.5 size-4 shrink-0 text-coral-ink" aria-hidden="true" />
                 <p>
                   {f.proposed.source === "PENDING_VERSION"
-                    ? `Version ${f.proposed.versionNumber} proposes a total of ${formatKobo(f.proposed.totalKobo)}`
-                    : `The change being prepared proposes a total of ${formatKobo(f.proposed.totalKobo)}`}
+                    ? `Version ${f.proposed.versionNumber} proposes a total of ${formatMoney(f.proposed.totalKobo)}`
+                    : `The change being prepared proposes a total of ${formatMoney(f.proposed.totalKobo)}`}
                   {f.proposed.adjustmentKobo !== null && f.proposed.adjustmentKobo !== 0
-                    ? ` (${f.proposed.adjustmentKobo > 0 ? "+" : "−"}${formatKobo(Math.abs(f.proposed.adjustmentKobo))})`
+                    ? ` (${f.proposed.adjustmentKobo > 0 ? "+" : "−"}${formatMoney(Math.abs(f.proposed.adjustmentKobo))})`
                     : ""}
                   . It is not agreed yet — the balance above uses version {f.agreed.versionNumber}. {wouldBe(f.proposed.totalKobo - f.received.netKobo)}
                 </p>
@@ -340,8 +340,8 @@ export function PaymentsSection({ order, timeZone }: { order: OrderDetailDto; ti
 
             {f.received.refundsKobo > 0 || f.received.reversalsKobo !== 0 ? (
               <p className="text-xs text-muted-foreground">
-                Deposits {formatKobo(f.received.depositsKobo)} · payments {formatKobo(f.received.paymentsKobo)} · refunds{" "}
-                {formatKobo(f.received.refundsKobo)} · corrections {formatKobo(f.received.reversalsKobo)}
+                Deposits {formatMoney(f.received.depositsKobo)} · payments {formatMoney(f.received.paymentsKobo)} · refunds{" "}
+                {formatMoney(f.received.refundsKobo)} · corrections {formatMoney(f.received.reversalsKobo)}
               </p>
             ) : null}
 
@@ -381,14 +381,14 @@ export function PaymentsSection({ order, timeZone }: { order: OrderDetailDto; ti
         description={
           correcting ? (
             <>
-              Adds an opposite entry of {formatKobo(correcting.amountKobo)} so the {PAYMENT_KIND_LABELS[correcting.kind].toLowerCase()} from{" "}
+              Adds an opposite entry of {formatMoney(correcting.amountKobo)} so the {PAYMENT_KIND_LABELS[correcting.kind].toLowerCase()} from{" "}
               {formatCalendarDate(correcting.receivedOn)} no longer counts. The original stays visible in the history. Record the right amount
               afterwards if needed.
             </>
           ) : null
         }
         label="What was wrong?"
-        placeholder="e.g. Amount typed incorrectly — it was ₦25,000"
+        placeholder="e.g. Amount typed incorrectly — it was $250"
         maxLength={500}
         confirmLabel="Record correction"
         onConfirm={(note) => reverse(correcting!, note)}

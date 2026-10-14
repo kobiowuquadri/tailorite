@@ -3,7 +3,7 @@
 Everything below is a hypothesis to test. No interviews, customers, revenue or time savings have been recorded yet.
 
 ## First customer segment
-Independent tailors and small fashion studios in Nigerian cities (one owner, a few apprentices) who take custom orders over WhatsApp: a few messages, a reference picture, a voice note, sometimes over several days.
+Independent tailors, fashion designers and small studios (one owner, a few apprentices) who take custom orders over WhatsApp and other chat apps: a few messages, a reference picture, a voice note, sometimes over several days.
 
 **The specific problem:** the agreed design, price and date are scattered across chats and memory. Contradictions (long vs elbow-length sleeves) are easy to miss, and when the customer asks for more work later, nobody wrote down what was agreed before, so price and date changes turn into arguments.
 
@@ -17,7 +17,7 @@ The value we expect is fewer remakes, refunds and disputes. We have **not** meas
 
 ## Pricing hypothesis (not active)
 - Free while in beta. Billing is not implemented and no workflow is ever locked.
-- Proposed later: first 3 approved orders free, then ₦500 per newly approved order; revisions and change approvals included; drafts, customers and measurements never charged.
+- Proposed later: first 3 approved orders free, then $1 per newly approved order; revisions and change approvals included; drafts, customers and measurements never charged.
 - Rationale to test: a tailor pays only when the product produced an agreement. Settings shows what would have been billed under this proposal, clearly marked as not charged.
 
 ## Getting the first customers
@@ -53,7 +53,7 @@ Interview 10–15 tailors before and after two weeks of use. Questions:
 3. When a customer asks for changes after you agreed the price, how do you decide the new price and date? How do you record it?
 4. Would your customers open a link and approve on their phone? What would stop them?
 5. After using Tailorite: which part did you actually use? What did you skip?
-6. Would you pay ₦500 per approved order? What would make it worth more, or less?
+6. Would you pay $1 per approved order? What would make it worth more, or less?
 
 | Interview | Date | Segment | Key quote | Would pay? | Notes |
 | --- | --- | --- | --- | --- | --- |

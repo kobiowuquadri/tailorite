@@ -46,8 +46,8 @@ test("a new owner records an order by hand, shares it, and the customer approves
   await page.getByRole("radio", { name: "Studio sources the fabric" }).click();
   await page.getByRole("radio", { name: "Measurements not needed" }).click();
   await page.locator("#not-needed").fill("Customer brings a well-fitting agbada to copy");
-  await page.locator("#total-price").fill("120000");
-  await page.locator("#deposit").fill("50000");
+  await page.locator("#total-price").fill("1200");
+  await page.locator("#deposit").fill("500");
   await page.locator("#delivery-date").fill(futureDate(30));
   await expect(page.getByText("Ready for customer review").first()).toBeVisible();
 
@@ -63,5 +63,5 @@ test("a new owner records an order by hand, shares it, and the customer approves
   await page.goto(orderUrl);
   await expect(page.getByText("Version 1 approved").first()).toBeVisible();
   await expect(page.getByText(/Approved as “Bola Martins”/).first()).toBeVisible();
-  await expect(page.locator("#agreement").getByText("₦120,000").first()).toBeVisible();
+  await expect(page.locator("#agreement").getByText("$1,200").first()).toBeVisible();
 });

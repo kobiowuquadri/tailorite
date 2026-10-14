@@ -1,11 +1,11 @@
 import { ArrowRight, CalendarClock, Wallet } from "lucide-react";
-import { formatCalendarDate, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatMoney } from "@/lib/format";
 import type { VersionComparisonDto } from "@/contracts/approvals";
 import { cn } from "@/lib/utils";
 
 function signedKobo(kobo: number) {
   if (kobo === 0) return "No change";
-  return `${kobo > 0 ? "+" : "−"}${formatKobo(Math.abs(kobo))}`;
+  return `${kobo > 0 ? "+" : "−"}${formatMoney(Math.abs(kobo))}`;
 }
 
 function shift(days: number) {
@@ -42,9 +42,9 @@ export function ComparisonView({
             <Wallet className="size-3.5" aria-hidden="true" /> Total price
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-2 tabular">
-            <span className="text-muted-foreground line-through decoration-1">{formatKobo(comparison.before.totalPriceKobo)}</span>
+            <span className="text-muted-foreground line-through decoration-1">{formatMoney(comparison.before.totalPriceKobo)}</span>
             <ArrowRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
-            <span className="text-lg font-semibold">{formatKobo(comparison.after.totalPriceKobo)}</span>
+            <span className="text-lg font-semibold">{formatMoney(comparison.after.totalPriceKobo)}</span>
           </p>
           {comparison.priceDifferenceKobo !== null ? (
             <p className={cn("mt-1 text-sm font-medium", priceUp ? "text-coral-ink" : comparison.priceDifferenceKobo < 0 ? "text-teal-ink" : "text-muted-foreground")}>
@@ -53,7 +53,7 @@ export function ComparisonView({
           ) : null}
           {comparison.before.depositRequiredKobo !== comparison.after.depositRequiredKobo ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              Deposit required: {formatKobo(comparison.before.depositRequiredKobo)} → {formatKobo(comparison.after.depositRequiredKobo)}
+              Deposit required: {formatMoney(comparison.before.depositRequiredKobo)} → {formatMoney(comparison.after.depositRequiredKobo)}
             </p>
           ) : null}
         </div>

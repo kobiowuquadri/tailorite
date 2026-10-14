@@ -9,7 +9,7 @@ NestJS JSON API under `/api`, served on the web app's origin (Caddy routes `/api
 - **Errors.** `{ "error": { "code", "message", "fieldErrors"?, "requestId", "meta"? } }` (codes listed in `src/contracts/common.ts`): `VALIDATION_FAILED` and `PUBLISH_BLOCKED` (422); `UNAUTHENTICATED` and `PORTAL_SESSION_REQUIRED` (401); `FORBIDDEN`, `ONBOARDING_REQUIRED`, `CSRF_REJECTED` (403); `NOT_FOUND` and `LINK_INVALID` (404 — also for other studios' ids); `CONFLICT`, `STALE_REVISION`, `STALE_VERSION`, `ALREADY_DECIDED`, `INVALID_STATE` (409); `LINK_EXPIRED`, `LINK_REVOKED` (410); `PAYLOAD_TOO_LARGE` (413); `UNSUPPORTED_MEDIA` (415); `RATE_LIMITED`, `LIMIT_REACHED` (429); `AI_NOT_CONFIGURED`, `SERVICE_UNAVAILABLE` (503); `INTERNAL` (500). Every response carries `x-request-id`.
 - **Concurrency and retries.** Brief writes send `expectedRevision`; publishing, AI runs, payments and reversals send an `idempotencyKey` so a retried request does not act twice.
 - **Pagination.** List endpoints accept `page` and `pageSize` (≤ 100) and return `{ items, page, pageSize, total }`.
-- **Money and dates.** Amounts are integer kobo; calendar dates are `YYYY-MM-DD`; timestamps are ISO-8601 UTC.
+- **Money and dates.** Amounts are integer cents (US dollars; fields ending in `Kobo` hold cents — see D10); calendar dates are `YYYY-MM-DD`; timestamps are ISO-8601 UTC.
 
 ## Routes
 

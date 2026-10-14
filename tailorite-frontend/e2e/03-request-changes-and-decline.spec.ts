@@ -37,11 +37,11 @@ test("requested changes lead to a revised version; a declined change leaves the 
 
   // The tailor proposes an upgrade; the customer declines it.
   await page.getByRole("button", { name: "Propose a change" }).click();
-  await page.getByRole("dialog").getByLabel("What is changing and why?").fill("Silk lining upgrade (+₦25,000).");
+  await page.getByRole("dialog").getByLabel("What is changing and why?").fill("Silk lining upgrade (+$250).");
   await page.getByRole("dialog").getByRole("button", { name: "Start the change" }).click();
   await page.waitForURL(/\/brief$/);
   await page.locator("#field-lining").fill("Silk lining");
-  await page.locator("#total-price").fill("110000");
+  await page.locator("#total-price").fill("1100");
   const v3 = await shareFromWorkbench(page, 3);
 
   await openReview(phone, v3);
@@ -54,7 +54,7 @@ test("requested changes lead to a revised version; a declined change leaves the 
   // Version 2 and its price remain the agreement; version 3 stays in the record.
   await page.goto(`/orders/${orderId}`);
   await expect(page.getByText("Version 2 approved").first()).toBeVisible();
-  await expect(moneyValue(page, "Agreed total (version 2)")).toHaveText("₦85,000");
+  await expect(moneyValue(page, "Agreed total (version 2)")).toHaveText("$850");
   await expect(versions.locator("li", { hasText: "Version 3" }).getByText("Declined by customer")).toBeVisible();
   await expect(page.getByText("Version 3 awaiting approval")).toHaveCount(0);
 });

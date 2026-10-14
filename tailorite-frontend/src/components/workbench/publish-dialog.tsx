@@ -15,7 +15,7 @@ import type { BriefEditor } from "@/components/workbench/use-brief-editor";
 import { api, isApiError, newIdempotencyKey } from "@/lib/api";
 import { invalidateOrder } from "@/lib/queries";
 import { toastError } from "@/lib/form-errors";
-import { formatCalendarDate, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatMoney } from "@/lib/format";
 import type { BriefDto } from "@/contracts/brief";
 import type { PublishResultDto } from "@/contracts/approvals";
 
@@ -111,11 +111,11 @@ export function PublishDialog({
                 <dl className="grid grid-cols-2 gap-3 rounded-lg bg-canvas p-3 text-sm">
                   <div>
                     <dt className="text-muted-foreground">Total price</dt>
-                    <dd className="font-semibold tabular">{formatKobo(terms.totalPriceKobo)}</dd>
+                    <dd className="font-semibold tabular">{formatMoney(terms.totalPriceKobo)}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Deposit required</dt>
-                    <dd className="font-semibold tabular">{formatKobo(terms.depositRequiredKobo)}</dd>
+                    <dd className="font-semibold tabular">{formatMoney(terms.depositRequiredKobo)}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Delivery date</dt>

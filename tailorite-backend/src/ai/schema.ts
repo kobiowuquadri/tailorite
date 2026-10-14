@@ -53,7 +53,7 @@ export const AiExtraction = z.object({
 export type AiExtraction = z.infer<typeof AiExtraction>;
 
 export const AiTranscript = z.object({
-  language: z.string().max(40).nullable().describe('Main spoken language, e.g. "English", "Yoruba", "Nigerian Pidgin"'),
+  language: z.string().max(40).nullable().describe('Main spoken language, e.g. "English", "Spanish", "Nigerian Pidgin"'),
   segments: z
     .array(
       z.object({

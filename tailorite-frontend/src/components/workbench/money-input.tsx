@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { koboToNairaInput, nairaInputToKobo } from "@/lib/format";
+import { centsToMoneyInput, moneyInputToCents } from "@/lib/format";
 
-/** Naira amount field that stores integer kobo. Shows an inline hint for unreadable amounts. */
-export function NairaInput({
+/** US dollar amount field that stores integer cents. Shows an inline hint for unreadable amounts. */
+export function MoneyInput({
   id,
   valueKobo,
   onChange,
@@ -20,19 +20,19 @@ export function NairaInput({
   invalid?: boolean;
   placeholder?: string;
 }) {
-  const [text, setText] = useState(() => koboToNairaInput(valueKobo));
+  const [text, setText] = useState(() => centsToMoneyInput(valueKobo));
   const [bad, setBad] = useState(false);
   const [seenValue, setSeenValue] = useState(valueKobo);
   if (valueKobo !== seenValue) {
     // Adopt external changes (e.g. a server action) unless the typed text already means the same amount.
     setSeenValue(valueKobo);
-    if (nairaInputToKobo(text) !== valueKobo) setText(koboToNairaInput(valueKobo));
+    if (moneyInputToCents(text) !== valueKobo) setText(centsToMoneyInput(valueKobo));
   }
 
   return (
     <div className="space-y-1">
       <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">₦</span>
+        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">$</span>
         <Input
           id={id}
           inputMode="decimal"
@@ -43,7 +43,7 @@ export function NairaInput({
           className="pl-7 tabular"
           onChange={(e) => {
             setText(e.target.value);
-            const kobo = nairaInputToKobo(e.target.value);
+            const kobo = moneyInputToCents(e.target.value);
             if (Number.isNaN(kobo)) {
               setBad(true);
               return;
@@ -52,8 +52,8 @@ export function NairaInput({
             onChange(kobo);
           }}
           onBlur={() => {
-            const kobo = nairaInputToKobo(text);
-            if (kobo !== null && !Number.isNaN(kobo)) setText(koboToNairaInput(kobo));
+            const kobo = moneyInputToCents(text);
+            if (kobo !== null && !Number.isNaN(kobo)) setText(centsToMoneyInput(kobo));
           }}
         />
       </div>

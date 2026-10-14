@@ -183,7 +183,7 @@ function WelcomeHero({
           src={photos.designerStudio.src}
           alt=""
           fill
-          priority
+          preload
           placeholder="blur"
           sizes="(min-width: 640px) 60vw, 100vw"
           className="animate-drift object-cover object-[35%_45%] brightness-125"

@@ -12,7 +12,7 @@ export const DEMO_STEPS: { title: string; body: string }[] = [
   },
   {
     title: "Share it for approval",
-    body: "Tick the reference picture, check ₦85,000 price, ₦30,000 deposit and the delivery date, then “Share for review” and copy the link.",
+    body: "Tick the reference picture, check $850 price, $300 deposit and the delivery date, then “Share for review” and copy the link.",
   },
   {
     title: "Approve as the customer",
@@ -20,7 +20,7 @@ export const DEMO_STEPS: { title: string; body: string }[] = [
   },
   {
     title: "Record the deposit",
-    body: "On the order page, “Record payment” → deposit ₦30,000. The balance becomes ₦55,000. Try “Print / PDF”.",
+    body: "On the order page, “Record payment” → deposit $300. The balance becomes $550. Try “Print / PDF”.",
   },
   {
     title: "Ask for a change as the customer",
@@ -28,11 +28,11 @@ export const DEMO_STEPS: { title: string; body: string }[] = [
   },
   {
     title: "Price the change",
-    body: "“Prepare a proposal”: embellishments “Heavier beading around the neckline”, price ₦100,000, delivery 2 days later → “Share change for approval”. Version 1 stays the agreement meanwhile.",
+    body: "“Prepare a proposal”: embellishments “Heavier beading around the neckline”, price $1,000, delivery 2 days later → “Share change for approval”. Version 1 stays the agreement meanwhile.",
   },
   {
     title: "Approve the change",
-    body: "Open the new link: it shows ₦85,000 → ₦100,000 (+₦15,000) and the new date. Approve it. The order now shows version 2 in force, balance ₦70,000, and version 1 kept in history.",
+    body: "Open the new link: it shows $850 → $1,000 (+$150) and the new date. Approve it. The order now shows version 2 in force, balance $700, and version 1 kept in history.",
   },
 ];
 
@@ -40,9 +40,9 @@ export const DEMO_FACTS: { label: string; value: string }[] = [
   { label: "Studio", value: "Amina Atelier (fictional)" },
   { label: "Customer", value: "Ada Okafor (fictional)" },
   { label: "Order", value: "ORD-0001 · Navy evening dress" },
-  { label: "Version 1", value: "₦85,000 · deposit ₦30,000" },
-  { label: "Change", value: "+₦15,000 → ₦100,000 · delivery +2 days" },
-  { label: "Balance", value: "₦55,000 after deposit · ₦70,000 after the change" },
+  { label: "Version 1", value: "$850 · deposit $300" },
+  { label: "Change", value: "+$150 → $1,000 · delivery +2 days" },
+  { label: "Balance", value: "$550 after deposit · $700 after the change" },
   { label: "AI", value: "Prepared example results, labelled as such" },
 ];
 

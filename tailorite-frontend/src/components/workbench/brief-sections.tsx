@@ -14,11 +14,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { MeasurementValuesEditor } from "@/components/customers/measurement-editor";
 import { BriefSection, FieldEditor } from "@/components/workbench/field-editor";
 import { EvidenceChips } from "@/components/workbench/evidence";
-import { NairaInput } from "@/components/workbench/naira-input";
+import { MoneyInput } from "@/components/workbench/money-input";
 import type { BriefEditor } from "@/components/workbench/use-brief-editor";
 import { api } from "@/lib/api";
 import { toastError } from "@/lib/form-errors";
-import { formatKobo } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import {
   FABRIC_SUPPLIER_LABELS,
   FIELD_DEFS,
@@ -383,15 +383,15 @@ export function TermsSection({ editor, disabled, problems }: SectionProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="total-price">Quoted total price *</Label>
-          <NairaInput id="total-price" valueKobo={t.totalPriceKobo} onChange={(v) => setT({ totalPriceKobo: v })} disabled={disabled} invalid={problems.has("totalPrice")} />
+          <MoneyInput id="total-price" valueKobo={t.totalPriceKobo} onChange={(v) => setT({ totalPriceKobo: v })} disabled={disabled} invalid={problems.has("totalPrice")} />
           {problems.get("totalPrice") ? <p className="text-xs text-destructive">{problems.get("totalPrice")}</p> : null}
         </div>
         <div className="space-y-1">
           <Label htmlFor="deposit">Deposit required *</Label>
-          <NairaInput id="deposit" valueKobo={t.depositRequiredKobo} onChange={(v) => setT({ depositRequiredKobo: v })} disabled={disabled} invalid={problems.has("depositRequired")} />
+          <MoneyInput id="deposit" valueKobo={t.depositRequiredKobo} onChange={(v) => setT({ depositRequiredKobo: v })} disabled={disabled} invalid={problems.has("depositRequired")} />
           {problems.get("depositRequired") ? <p className="text-xs text-destructive">{problems.get("depositRequired")}</p> : null}
           {t.totalPriceKobo && t.depositRequiredKobo !== null && t.depositRequiredKobo <= t.totalPriceKobo ? (
-            <p className="text-xs text-muted-foreground">Balance on delivery: {formatKobo(t.totalPriceKobo - t.depositRequiredKobo)}</p>
+            <p className="text-xs text-muted-foreground">Balance on delivery: {formatMoney(t.totalPriceKobo - t.depositRequiredKobo)}</p>
           ) : null}
         </div>
         <div className="space-y-1">

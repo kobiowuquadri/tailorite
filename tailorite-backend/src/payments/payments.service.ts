@@ -3,7 +3,7 @@ import { PrismaService } from '../common/prisma/prisma.service.js';
 import { Errors } from '../common/errors/app-error.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { UserActor } from '../auth/decorators.js';
-import { BriefContent, formatKobo } from '../contracts/brief.js';
+import { BriefContent, formatMoney } from '../contracts/brief.js';
 import {
   PAYMENT_KIND_LABELS,
   type FinanceDto,
@@ -84,7 +84,7 @@ export class PaymentsService {
     }));
 
     return {
-      currency: 'NGN',
+      currency: 'USD',
       ...computeFinance({ agreed, proposed, entries: order.payments }),
       entries,
     };
@@ -117,7 +117,7 @@ export class PaymentsService {
         orderId,
         actor,
         type: 'PAYMENT_RECORDED',
-        summary: `${PAYMENT_KIND_LABELS[input.kind]}: ${formatKobo(input.amountKobo)}${input.method ? ` (${input.method})` : ''} — recorded by studio`,
+        summary: `${PAYMENT_KIND_LABELS[input.kind]}: ${formatMoney(input.amountKobo)}${input.method ? ` (${input.method})` : ''} — recorded by studio`,
         data: { kind: input.kind, amountKobo: input.amountKobo },
       });
     });
@@ -162,7 +162,7 @@ export class PaymentsService {
         orderId,
         actor,
         type: 'PAYMENT_REVERSED',
-        summary: `Reversed ${PAYMENT_KIND_LABELS[payment.kind].toLowerCase()} of ${formatKobo(Number(payment.amountKobo))} — ${input.note}`,
+        summary: `Reversed ${PAYMENT_KIND_LABELS[payment.kind].toLowerCase()} of ${formatMoney(Number(payment.amountKobo))} — ${input.note}`,
         data: { paymentId },
       });
     });

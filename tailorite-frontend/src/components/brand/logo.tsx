@@ -1,28 +1,27 @@
+import Image from "next/image";
+import mark from "@/assets/brand/tailorite-mark.png";
+import wordmark from "@/assets/brand/tailorite-wordmark.png";
+import wordmarkLight from "@/assets/brand/tailorite-wordmark-light.png";
 import { cn } from "@/lib/utils";
 
+// Brand files are derived from the masters in src/assets/images (Tailorite.png, Tailorite_favicon.png).
+// They are pre-sized for 2–3x screens, so they are served as-is rather than through the image optimizer.
+
+/** The "T" mark with the thread swoosh. Decorative: always pair it with visible text. */
 export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 64" aria-hidden="true" className={cn("size-8 shrink-0", className)}>
-      <rect width="64" height="64" rx="14" fill="#0666FF" />
-      <path
-        d="M16 31.5 27 42 48 20"
-        fill="none"
-        stroke="#FFFFFF"
-        strokeWidth="7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M14 52h36" fill="none" stroke="#00BFB3" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="5 4.5" />
-    </svg>
-  );
+  return <Image src={mark} alt="" aria-hidden="true" unoptimized className={cn("size-8 shrink-0 object-contain", className)} />;
 }
 
-/** Text wordmark (no brand asset files were supplied for this release). */
-export function Logo({ className, markClassName, light = false }: { className?: string; markClassName?: string; light?: boolean }) {
+/** Tailorite wordmark. `light` is the reversed version for dark backgrounds and photos. */
+export function Logo({ className, light = false }: { className?: string; light?: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <LogoMark className={markClassName} />
-      <span className={cn("text-lg font-bold tracking-tight", light ? "text-white" : "text-foreground")}>Tailorite</span>
-    </span>
+    <Image
+      src={light ? wordmarkLight : wordmark}
+      alt="Tailorite"
+      unoptimized
+      loading="eager"
+      className={cn("h-7 w-auto shrink-0 select-none", className)}
+      draggable={false}
+    />
   );
 }

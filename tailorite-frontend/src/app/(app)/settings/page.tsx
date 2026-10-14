@@ -18,7 +18,7 @@ import { ErrorState, PageHeader, PageSkeleton } from "@/components/common/states
 import { api } from "@/lib/api";
 import { qk, useAiStatus, useStudio, useUsage } from "@/lib/queries";
 import { applyServerErrors } from "@/lib/form-errors";
-import { formatBytes, formatDateTime, formatKobo } from "@/lib/format";
+import { formatBytes, formatDateTime, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   COMMON_TIME_ZONES,
@@ -51,7 +51,7 @@ function StudioForm({ studio }: { studio: StudioDto }) {
     city: s.city ?? "",
     measurementUnit: s.measurementUnit,
     timeZone: s.timeZone,
-    currency: "NGN",
+    currency: "USD",
   });
   const form = useForm<Values>({ resolver: zodResolver(UpdateStudioInput), defaultValues: toValues(studio) });
   const { errors, isSubmitting, isDirty } = form.formState;
@@ -145,7 +145,7 @@ function StudioForm({ studio }: { studio: StudioDto }) {
                 </Select>
               )}
             />
-            <FieldDescription>Times in history and on review pages are shown in this zone. Currency: Nigerian naira (₦).</FieldDescription>
+            <FieldDescription>Times in history and on review pages are shown in this zone. Currency: US dollar ($).</FieldDescription>
             <FieldError errors={[errors.timeZone]} />
           </Field>
         </div>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
   if (studio.isPending) return <PageSkeleton rows={4} />;
   if (studio.error) return <ErrorState error={studio.error} onRetry={() => studio.refetch()} />;
   const tz = studio.data.timeZone;
-  const pricePerOrder = formatKobo(PRICING_HYPOTHESIS.proposedPricePerApprovedOrderKobo);
+  const pricePerOrder = formatMoney(PRICING_HYPOTHESIS.proposedPricePerApprovedOrderKobo);
 
   return (
     <div className="space-y-6">
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                   </p>
                   <p className="text-muted-foreground">
                     Under that proposal this studio would have {usage.data.freeApprovedOrdersRemaining} free approved order
-                    {usage.data.freeApprovedOrdersRemaining === 1 ? "" : "s"} left, and {formatKobo(usage.data.hypotheticalChargeKobo)} would
+                    {usage.data.freeApprovedOrdersRemaining === 1 ? "" : "s"} left, and {formatMoney(usage.data.hypotheticalChargeKobo)} would
                     have been billed so far (not charged).
                   </p>
                 </div>

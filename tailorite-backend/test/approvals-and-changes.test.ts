@@ -258,7 +258,7 @@ describe('change management and money (demo scenario)', () => {
 
     await c
       .post(`/api/orders/${orderId}/change-requests/${requests[0].id}/start`, {
-        reason: 'Heavier neckline beading: additional ₦15,000 and two more days.',
+        reason: 'Heavier neckline beading: additional $150 and two more days.',
       })
       .expect(200);
     const draft = await getBrief(c, orderId);
@@ -281,7 +281,7 @@ describe('change management and money (demo scenario)', () => {
     expect(v2.version.number).toBe(2);
     expect(v2.version.kind).toBe('REVISION');
 
-    // While V2 is pending, V1 and its ₦85,000 total stay in force.
+    // While V2 is pending, V1 and its $850 total stay in force.
     let order = (await c.get(`/api/orders/${orderId}`).expect(200)).body;
     expect(order.agreementStatus).toBe('REVISION_AWAITING_APPROVAL');
     expect(order.activeVersion.number).toBe(1);

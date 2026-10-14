@@ -29,7 +29,7 @@ import { ComparisonView } from "@/components/order/comparison-view";
 import { DecisionSheet, type PortalAction } from "@/components/portal/decision-sheet";
 import { ApiError, isApiError } from "@/lib/api";
 import { loadReview, portalPost } from "@/lib/portal";
-import { formatCalendarDate, formatDateTime, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatDateTime, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PortalReviewDto, PortalState } from "@/contracts/approvals";
 
@@ -142,15 +142,15 @@ function TermsCard({ review }: { review: PortalReviewDto }) {
           <dt className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Wallet className="size-4" aria-hidden="true" /> Total price
           </dt>
-          <dd className="mt-1 text-3xl font-bold tracking-tight tabular">{formatKobo(t.totalPriceKobo)}</dd>
+          <dd className="mt-1 text-3xl font-bold tracking-tight tabular">{formatMoney(t.totalPriceKobo)}</dd>
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Deposit</dt>
-          <dd className="text-lg font-semibold tabular">{formatKobo(t.depositRequiredKobo)}</dd>
+          <dd className="text-lg font-semibold tabular">{formatMoney(t.depositRequiredKobo)}</dd>
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Rest of the price</dt>
-          <dd className="text-lg font-semibold tabular">{formatKobo(Math.max(0, balance))}</dd>
+          <dd className="text-lg font-semibold tabular">{formatMoney(Math.max(0, balance))}</dd>
         </div>
         <div>
           <dt className="flex items-center gap-1.5 text-sm text-muted-foreground">

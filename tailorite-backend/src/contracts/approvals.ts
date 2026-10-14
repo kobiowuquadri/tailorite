@@ -74,7 +74,7 @@ export type VersionSnapshot = {
     phone: string | null;
     email: string | null;
     city: string | null;
-    currency: 'NGN';
+    currency: 'USD' | 'NGN';
     timeZone: string;
   };
   customer: { name: string };

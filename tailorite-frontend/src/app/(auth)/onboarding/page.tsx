@@ -33,7 +33,7 @@ export default function OnboardingPage() {
       email: "",
       city: "",
       timeZone: "Africa/Lagos",
-      currency: "NGN",
+      currency: "USD",
     },
   });
   const { errors, isSubmitting } = form.formState;
@@ -151,7 +151,7 @@ export default function OnboardingPage() {
             </Field>
             <Field>
               <FieldLabel htmlFor="currency">Currency</FieldLabel>
-              <Input id="currency" value="Nigerian naira (₦)" readOnly disabled />
+              <Input id="currency" value="US dollar ($)" readOnly disabled />
             </Field>
           </div>
 

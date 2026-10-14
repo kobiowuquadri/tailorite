@@ -22,8 +22,8 @@ type OtherOrder = {
   garmentType: string;
   message: string;
   fields: Partial<Record<TextFieldKey, string>>;
-  priceNaira: number;
-  depositNaira: number;
+  priceDollars: number;
+  depositDollars: number;
   deliveryInDays: number;
   measurements: MeasurementValue[] | 'AT_FITTING';
   target: 'READY' | 'AWAITING' | 'APPROVED_CHANGE_REQUESTED' | 'IN_PROGRESS_DUE_SOON' | 'COMPLETED';
@@ -49,8 +49,8 @@ const OTHER_ORDERS: OtherOrder[] = [
     garmentType: 'Iro and buba',
     message: 'Gold and wine aso-ebi for my cousin’s wedding. Loose buba, wrapper with a neat fold. No sequins please.',
     fields: { overallStyle: 'Classic iro and buba', neckline: 'Round neckline', sleeves: 'Wide three-quarter sleeves', length: 'Ankle-length wrapper', fit: 'Relaxed buba, wrapper tied at the waist', fabric: 'Customer’s aso-oke and lace', color: 'Gold and wine' },
-    priceNaira: 45_000,
-    depositNaira: 20_000,
+    priceDollars: 450,
+    depositDollars: 200,
     deliveryInDays: 18,
     measurements: [
       { key: 'bust', label: 'Bust', value: 38 },
@@ -66,8 +66,8 @@ const OTHER_ORDERS: OtherOrder[] = [
     garmentType: 'Agbada',
     message: 'Cream agbada with matching cap for my wedding. Simple embroidery on the chest only.',
     fields: { overallStyle: 'Three-piece agbada with fila', neckline: 'Round neck with placket', sleeves: 'Full agbada sleeves', length: 'Full length', fit: 'Relaxed', fabric: 'Cashmere-blend (studio sources)', color: 'Cream', embellishments: 'Tone-on-tone embroidery on the chest' },
-    priceNaira: 120_000,
-    depositNaira: 60_000,
+    priceDollars: 1_200,
+    depositDollars: 600,
     deliveryInDays: 25,
     measurements: [
       { key: 'shoulder', label: 'Shoulder width', value: 19 },
@@ -83,8 +83,8 @@ const OTHER_ORDERS: OtherOrder[] = [
     garmentType: 'Evening gown',
     message: 'Emerald reception gown, off-shoulder, with a short train.',
     fields: { overallStyle: 'Mermaid reception gown', neckline: 'Off-shoulder', sleeves: 'Not applicable', length: 'Floor length with a short train', fit: 'Fitted to the knee', fabric: 'Satin (studio sources)', color: 'Emerald green' },
-    priceNaira: 150_000,
-    depositNaira: 75_000,
+    priceDollars: 1_500,
+    depositDollars: 750,
     deliveryInDays: 30,
     measurements: 'AT_FITTING',
     target: 'APPROVED_CHANGE_REQUESTED',
@@ -96,8 +96,8 @@ const OTHER_ORDERS: OtherOrder[] = [
     garmentType: 'Kaftan',
     message: 'Navy kaftan with white embroidery at the neck and cuffs, side pockets.',
     fields: { overallStyle: 'Straight kaftan', neckline: 'Mandarin collar', sleeves: 'Long, straight', length: 'Ankle length', fit: 'Straight', fabric: 'Linen (customer provides)', color: 'Navy', embellishments: 'White embroidery at neck and cuffs', specialRequests: 'Two side pockets' },
-    priceNaira: 35_000,
-    depositNaira: 20_000,
+    priceDollars: 350,
+    depositDollars: 200,
     deliveryInDays: 5,
     measurements: [
       { key: 'shoulder', label: 'Shoulder width', value: 17 },
@@ -112,8 +112,8 @@ const OTHER_ORDERS: OtherOrder[] = [
     garmentType: 'Senator suit',
     message: 'Charcoal senator suit for church, slim trousers.',
     fields: { overallStyle: 'Two-piece senator suit', neckline: 'Round neck', sleeves: 'Long sleeves', length: 'Tunic to mid-thigh', fit: 'Slim', fabric: 'Wool blend (studio sources)', color: 'Charcoal' },
-    priceNaira: 40_000,
-    depositNaira: 20_000,
+    priceDollars: 400,
+    depositDollars: 200,
     deliveryInDays: 2,
     measurements: [
       { key: 'shoulder', label: 'Shoulder width', value: 18 },
@@ -202,8 +202,8 @@ export class DemoScenarioService {
     const brief = await this.briefs.get(studioId, order.id);
     const content = brief.content;
     content.terms = {
-      totalPriceKobo: 8_500_000,
-      depositRequiredKobo: 3_000_000,
+      totalPriceKobo: 85_000,
+      depositRequiredKobo: 30_000,
       deliveryDate: addDays(today, 21),
       fittingDate: null,
       paymentNote: 'Deposit before cutting; balance on collection.',
@@ -244,8 +244,8 @@ export class DemoScenarioService {
           ? { mode: 'AT_FITTING', fittingNote: 'Bring the shoes you will wear' }
           : { mode: 'MEASURED', unit: 'INCH', values: spec.measurements, recordedOn: addDays(today, -7) },
       terms: {
-        totalPriceKobo: spec.priceNaira * 100,
-        depositRequiredKobo: spec.depositNaira * 100,
+        totalPriceKobo: spec.priceDollars * 100,
+        depositRequiredKobo: spec.depositDollars * 100,
         deliveryDate: addDays(today, spec.deliveryInDays),
         fittingDate: spec.measurements === 'AT_FITTING' ? addDays(today, 7) : null,
       },
@@ -273,7 +273,7 @@ export class DemoScenarioService {
     }
     await this.payments.record(studioId, actor, order.id, {
       kind: 'DEPOSIT',
-      amountKobo: spec.depositNaira * 100,
+      amountKobo: spec.depositDollars * 100,
       receivedOn: addDays(today, -2),
       method: 'Bank transfer',
       note: null,
@@ -284,7 +284,7 @@ export class DemoScenarioService {
       await this.orders.transitionProduction(studioId, actor, order.id, { to: 'READY_FOR_COLLECTION' });
       await this.payments.record(studioId, actor, order.id, {
         kind: 'PAYMENT',
-        amountKobo: (spec.priceNaira - spec.depositNaira) * 100,
+        amountKobo: (spec.priceDollars - spec.depositDollars) * 100,
         receivedOn: today,
         method: 'Cash',
         note: 'Balance paid on collection',

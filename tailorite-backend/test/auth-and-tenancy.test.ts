@@ -15,7 +15,7 @@ describe('authentication and sessions', () => {
     const session = await c.get('/api/auth/session').expect(200);
     expect(session.body.user.email).toBe(email);
     expect(session.body.studio.name).toBe('Ìfẹ́ Couture');
-    expect(session.body.studio.currency).toBe('NGN');
+    expect(session.body.studio.currency).toBe('USD');
     expect(session.body.studio.timeZone).toBe('Africa/Lagos');
 
     // The session cookie is HttpOnly and never readable by scripts.

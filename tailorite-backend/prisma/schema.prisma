@@ -224,7 +224,7 @@ model Studio {
   phone           String?
   email           String?
   city            String?
-  currency        String          @default("NGN")
+  currency        String          @default("USD")
   timeZone        String          @default("Africa/Lagos")
   measurementUnit MeasurementUnit
   nextOrderNumber Int             @default(1)

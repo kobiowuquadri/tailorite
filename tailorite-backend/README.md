@@ -2,12 +2,12 @@
 
 **Every detail agreed. Every stitch understood.**
 
-Tailorite helps independent tailors in Nigeria turn a customer's WhatsApp messages, reference pictures and voice notes into a clear brief — with every detail linked to where it came from — and get that exact version approved by the customer on their phone before cutting fabric. Later changes become new versions with a before/after comparison and the price and date difference; the customer approves those too. Deposits and payments are recorded, and the approved brief prints as a PDF.
+Tailorite helps independent tailors and fashion designers turn a customer's WhatsApp messages, reference pictures and voice notes into a clear brief — with every detail linked to where it came from — and get that exact version approved by the customer on their phone before cutting fabric. Later changes become new versions with a before/after comparison and the price and date difference; the customer approves those too. Deposits and payments are recorded, and the approved brief prints as a PDF.
 
 This repository is the **API and worker**. The web app is in the sibling folder [`../tailorite-frontend`](../tailorite-frontend). Project documentation is in [`docs/`](docs).
 
 ## What works
-- Sign-up, studio onboarding (₦, Africa/Lagos, inches or cm), customers with measurement profiles.
+- Sign-up, studio onboarding (US dollars, time zone, inches or cm), customers with measurement profiles.
 - Orders with pasted messages, image and audio uploads, and in-browser voice recording; private storage.
 - Brief workbench: source-linked fields, optional AI suggestions (Gemini) that are never applied without review, conflicts shown side by side, questions, readiness checks.
 - Immutable published versions, private expiring customer links, mobile approval with typed name and explicit confirmation, request changes / decline.

@@ -9,14 +9,33 @@ const inter = Inter({
   display: "swap",
 });
 
+const description =
+  "Tailorite turns reference pictures, voice notes and scattered messages into clear, customer-approved tailoring orders before the first stitch.";
+
+// Absolute base for share images. On Vercel, Next.js falls back to the production URL; set SITE_URL for a custom domain.
+const siteUrl = process.env.SITE_URL?.trim();
+
 export const metadata: Metadata = {
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: {
     default: "Tailorite — Every detail agreed. Every stitch understood.",
     template: "%s · Tailorite",
   },
-  description:
-    "Tailorite turns reference pictures, voice notes and scattered messages into clear, customer-approved tailoring orders before the first stitch.",
+  description,
   applicationName: "Tailorite",
+  appleWebApp: { title: "Tailorite", statusBarStyle: "default" },
+  openGraph: {
+    type: "website",
+    siteName: "Tailorite",
+    locale: "en_US",
+    title: "Tailorite — Every detail agreed. Every stitch understood.",
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tailorite — Every detail agreed. Every stitch understood.",
+    description,
+  },
 };
 
 export const viewport: Viewport = {
@@ -27,7 +46,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-NG" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>

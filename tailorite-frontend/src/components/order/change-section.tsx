@@ -13,7 +13,7 @@ import { ReasonDialog } from "@/components/order/reason-dialog";
 import { ErrorState } from "@/components/common/states";
 import { api } from "@/lib/api";
 import { invalidateOrder, qk } from "@/lib/queries";
-import { formatDateTime, formatKobo } from "@/lib/format";
+import { formatDateTime, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CHANGE_STATUS_LABELS, OPEN_CHANGE_STATUSES, type ChangeRequestDto } from "@/contracts/changes";
 import type { OrderDetailDto } from "@/contracts/orders";
@@ -213,7 +213,7 @@ export function ChangeSection({ order, timeZone }: { order: OrderDetailDto; time
                 ) : null}
                 {c.priceAdjustmentKobo !== null && c.status === "APPROVED" ? (
                   <p className="text-muted-foreground">
-                    Price {c.priceAdjustmentKobo >= 0 ? "increase" : "decrease"}: {formatKobo(Math.abs(c.priceAdjustmentKobo))}
+                    Price {c.priceAdjustmentKobo >= 0 ? "increase" : "decrease"}: {formatMoney(Math.abs(c.priceAdjustmentKobo))}
                   </p>
                 ) : null}
                 {c.decisionNote ? <p className="text-muted-foreground">Note: {c.decisionNote}</p> : null}

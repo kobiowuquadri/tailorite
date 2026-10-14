@@ -50,7 +50,7 @@ export function CustomerForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field data-invalid={Boolean(errors.phone)}>
             <FieldLabel htmlFor="customer-phone">Phone (optional)</FieldLabel>
-            <Input id="customer-phone" type="tel" placeholder="0803 000 0000" {...form.register("phone")} />
+            <Input id="customer-phone" type="tel" placeholder="+1 555 010 0000" {...form.register("phone")} />
             <FieldDescription>Used to open WhatsApp with a prefilled message. Tailorite never sends messages itself.</FieldDescription>
             <FieldError errors={[errors.phone]} />
           </Field>

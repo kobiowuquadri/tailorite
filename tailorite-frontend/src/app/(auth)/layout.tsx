@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from "react";
 import { BrowserOnly } from "@/components/browser-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthVisual } from "@/components/auth/auth-visual";
+import { Copyright } from "@/components/marketing/copyright";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -20,12 +21,16 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             </Suspense>
           </div>
         </main>
-        <p className="px-4 pb-6 text-center text-xs text-muted-foreground">
-          Photos:{" "}
-          <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">
-            Pexels
-          </a>
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 pb-6 text-center text-xs text-muted-foreground">
+          <Copyright />
+          <span aria-hidden="true">·</span>
+          <p>
+            Photos:{" "}
+            <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">
+              Pexels
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

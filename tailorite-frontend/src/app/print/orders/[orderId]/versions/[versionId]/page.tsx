@@ -10,7 +10,7 @@ import { PrintDocument } from "@/components/print/print-document";
 import { shortHash } from "@/components/order/agreement-section";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/queries";
-import { formatCalendarDate, formatDateTime, formatKobo } from "@/lib/format";
+import { formatCalendarDate, formatDateTime, formatMoney } from "@/lib/format";
 import { VERSION_STATUS_LABELS } from "@/contracts/orders";
 import type { VersionDetailDto } from "@/contracts/approvals";
 
@@ -84,7 +84,7 @@ export default function PrintVersionPage() {
       footer={
         <>
           <p>
-            {v.order.title} · total {formatKobo(v.totalPriceKobo)} · delivery {formatCalendarDate(v.deliveryDate)}
+            {v.order.title} · total {formatMoney(v.totalPriceKobo)} · delivery {formatCalendarDate(v.deliveryDate)}
           </p>
           <p>Content fingerprint (SHA-256): {v.contentHash}</p>
           <p>Printed {formatDateTime(new Date().toISOString(), tz)}</p>
@@ -94,7 +94,7 @@ export default function PrintVersionPage() {
       {v.change ? (
         <p className="mb-5 rounded-lg bg-canvas p-3 text-sm">
           <span className="font-medium">Change to version {v.change.baseVersionNumber}: </span>
-          {v.change.reason ?? "Revised agreement"}. Previous total {formatKobo(v.change.previousTotalKobo)}, previous delivery date{" "}
+          {v.change.reason ?? "Revised agreement"}. Previous total {formatMoney(v.change.previousTotalKobo)}, previous delivery date{" "}
           {formatCalendarDate(v.change.previousDeliveryDate)}.
         </p>
       ) : null}

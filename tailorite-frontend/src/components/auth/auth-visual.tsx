@@ -67,7 +67,7 @@ export function AuthVisual({ variant }: { variant: "panel" | "banner" }) {
           src={scene.photo.src}
           alt=""
           fill
-          priority
+          fetchPriority="high"
           sizes="(min-width: 1024px) 1px, 100vw"
           placeholder="blur"
           className={cn("animate-drift object-cover", scene.bannerPosition)}
@@ -86,7 +86,7 @@ export function AuthVisual({ variant }: { variant: "panel" | "banner" }) {
         src={scene.photo.src}
         alt={scene.photo.alt}
         fill
-        priority
+        fetchPriority="high"
         sizes="(min-width: 1024px) 52vw, 100vw"
         placeholder="blur"
         className={cn("animate-drift object-cover", scene.position)}

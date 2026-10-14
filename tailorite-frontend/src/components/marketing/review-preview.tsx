@@ -35,11 +35,11 @@ export function ReviewPreview() {
                   <Wallet className="size-3" aria-hidden="true" /> Total
                 </p>
                 <p className="flex flex-wrap items-center gap-1">
-                  <span className="text-muted-foreground line-through">₦85,000</span>
+                  <span className="text-muted-foreground line-through">$850</span>
                   <ArrowRight className="size-2.5 text-muted-foreground" aria-hidden="true" />
-                  <span className="font-semibold">₦100,000</span>
+                  <span className="font-semibold">$1,000</span>
                 </p>
-                <p className="font-medium text-coral-ink">+₦15,000</p>
+                <p className="font-medium text-coral-ink">+$150</p>
               </div>
               <div className="rounded-lg border border-border p-2">
                 <p className="flex items-center gap-1 text-muted-foreground">

@@ -61,8 +61,8 @@ test("uploaded sources are processed by the test provider, the sleeve conflict i
   await page.locator("#field-fabric").fill("Customer-supplied navy crepe");
   await page.getByRole("radio", { name: "Measurements will be taken at a fitting" }).click();
   await page.locator("#fitting-date").fill(futureDate(7));
-  await page.locator("#total-price").fill("85000");
-  await page.locator("#deposit").fill("30000");
+  await page.locator("#total-price").fill("850");
+  await page.locator("#deposit").fill("300");
   await page.locator("#delivery-date").fill(futureDate(21));
   await expect(page.getByText("Ready for customer review").first()).toBeVisible();
 

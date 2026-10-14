@@ -8,7 +8,7 @@ import {
   type EvidenceBasis,
   type SuggestionKey,
 } from '../contracts/brief.js';
-import { parseIsoDateValue, parseNairaToKobo, currentValueFor } from '../briefs/apply-value.js';
+import { parseIsoDateValue, parseMoneyToCents, currentValueFor } from '../briefs/apply-value.js';
 import { resolveEvidence, type EvidenceSource, type EvidenceStats } from './evidence.js';
 import type { AiExtraction } from './schema.js';
 
@@ -64,8 +64,8 @@ function coerce(key: SuggestionKey, value: string | number | null): string | num
     return v === 'CUSTOMER' || v === 'STUDIO' ? v : null;
   }
   if (key === 'totalPrice' || key === 'depositRequired') {
-    const kobo = parseNairaToKobo(value);
-    return kobo === null || kobo <= 0 ? null : kobo / 100;
+    const cents = parseMoneyToCents(value);
+    return cents === null || cents <= 0 ? null : cents / 100;
   }
   if (key === 'deliveryDate' || key === 'fittingDate') return parseIsoDateValue(String(value));
   return null;
