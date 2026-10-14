@@ -1,0 +1,16 @@
+# Single-package project; this file only carries pnpm settings.
+# Only these dependencies may run install scripts (pnpm 10 blocks others by default).
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - prisma
+  - '@embedded-postgres/windows-x64'
+  - '@embedded-postgres/linux-x64'
+  - '@embedded-postgres/linux-arm64'
+  - '@embedded-postgres/darwin-x64'
+  - '@embedded-postgres/darwin-arm64'
+# Optional native accelerators / no-op scripts that are safe to skip.
+ignoredBuiltDependencies:
+  - '@google/genai'
+  - msgpackr-extract
+  - protobufjs
+  - '@nestjs/core'

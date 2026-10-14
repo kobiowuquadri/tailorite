@@ -1,0 +1,20 @@
+# One public origin for the whole product: the browser talks to /api/* on the same host, so
+# session cookies stay first-party and no cross-origin exceptions are needed.
+# SITE_ADDRESS ":80" serves plain HTTP (local); a domain name (e.g. "tailorite.example.com")
+# makes Caddy obtain and renew HTTPS certificates automatically.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

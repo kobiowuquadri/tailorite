@@ -1,0 +1,828 @@
+// Tailorite data model.
+// Tenant boundary: every tenant-owned row carries studioId and relates to its parent through a
+// composite (id, studioId) or (id, orderId) foreign key, so the database itself rejects links
+// between rows of different studios/orders. See docs/DATA-MODEL.md.
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────── enums
+
+enum MembershipRole {
+  OWNER
+  STAFF
+}
+
+enum MeasurementUnit {
+  INCH
+  CM
+}
+
+/// Agreement state machine (separate from production progress).
+enum AgreementStatus {
+  DRAFT
+  NEEDS_CLARIFICATION
+  READY_FOR_REVIEW
+  AWAITING_APPROVAL
+  APPROVED
+  REVISION_DRAFT
+  REVISION_AWAITING_APPROVAL
+}
+
+/// Production state machine. Transitions are enforced in OrdersService.
+enum ProductionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  READY_FOR_FITTING
+  READY_FOR_COLLECTION
+  COMPLETED
+  CANCELLED
+}
+
+enum SourceKind {
+  TEXT
+  IMAGE
+  AUDIO
+}
+
+enum SourceOrigin {
+  PASTED
+  UPLOADED
+  RECORDED
+  SEEDED
+}
+
+enum SourceProcessingState {
+  NOT_PROCESSED
+  QUEUED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+enum TranscriptOrigin {
+  MACHINE
+  FIXTURE
+  HUMAN
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum AiRunMode {
+  LIVE
+  FIXTURE
+  TEST
+}
+
+enum SuggestionStatus {
+  PENDING
+  ACCEPTED
+  EDITED
+  REJECTED
+  SUPERSEDED
+}
+
+enum EvidenceBasis {
+  EXPLICIT_TEXT
+  AUDIO_TRANSCRIPT
+  VISUAL_OBSERVATION
+  INFERENCE
+}
+
+enum IssueKind {
+  MISSING
+  CONFLICT
+  QUESTION
+  CUSTOMER_FEEDBACK
+}
+
+enum IssueOrigin {
+  AI
+  SYSTEM
+  STUDIO
+  CUSTOMER
+}
+
+enum IssueStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum ApprovalKind {
+  INITIAL
+  REVISION
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  DECLINED
+  SUPERSEDED
+  WITHDRAWN
+}
+
+enum DecisionType {
+  APPROVED
+  CHANGES_REQUESTED
+  DECLINED
+}
+
+enum PortalAccessPurpose {
+  APPROVAL
+  CHANGE_REQUEST
+}
+
+enum ChangeInitiator {
+  CUSTOMER
+  STUDIO
+}
+
+enum ChangeRequestStatus {
+  REQUESTED
+  DRAFTING
+  AWAITING_APPROVAL
+  APPROVED
+  DECLINED_BY_STUDIO
+  DECLINED_BY_CUSTOMER
+  WITHDRAWN
+}
+
+enum PaymentKind {
+  DEPOSIT
+  PAYMENT
+  REFUND
+  REVERSAL
+}
+
+enum VersionSourceRole {
+  REFERENCE
+  EVIDENCE
+}
+
+enum ActorType {
+  USER
+  CUSTOMER
+  SYSTEM
+}
+
+// ─────────────────────────────────────────────────────────────── identity & tenancy
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  /// Stored lower-cased.
+  email        String   @unique
+  /// argon2id PHC string. Null only for passwordless demo sandbox users.
+  passwordHash String?
+  name         String
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions    Session[]
+  memberships Membership[]
+}
+
+model Session {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  userId            String    @db.Uuid
+  /// SHA-256 of the random session token; the raw token only lives in the HttpOnly cookie.
+  tokenHash         String    @unique
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  lastSeenAt        DateTime  @default(now()) @db.Timestamptz(3)
+  idleExpiresAt     DateTime  @db.Timestamptz(3)
+  absoluteExpiresAt DateTime  @db.Timestamptz(3)
+  revokedAt         DateTime? @db.Timestamptz(3)
+  userAgent         String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([absoluteExpiresAt])
+}
+
+model Studio {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  name            String
+  ownerName       String
+  phone           String?
+  email           String?
+  city            String?
+  currency        String          @default("NGN")
+  timeZone        String          @default("Africa/Lagos")
+  measurementUnit MeasurementUnit
+  nextOrderNumber Int             @default(1)
+  isDemo          Boolean         @default(false)
+  /// Set only for the guarded, repeatable presenter seed ("amina-atelier").
+  demoSeedKey     String?         @unique
+  /// Sandbox studios created by "Explore demo" are purged after this time.
+  demoExpiresAt   DateTime?       @db.Timestamptz(3)
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+
+  memberships Membership[]
+  customers   Customer[]
+  orders      Order[]
+  auditEvents AuditEvent[]
+
+  @@index([isDemo, demoExpiresAt])
+}
+
+/// Users belong to studios through memberships so staff can be added later.
+model Membership {
+  id        String         @id @default(uuid(7)) @db.Uuid
+  studioId  String         @db.Uuid
+  userId    String         @db.Uuid
+  role      MembershipRole @default(OWNER)
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+
+  studio Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([studioId, userId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────── customers
+
+model Customer {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  studioId    String    @db.Uuid
+  name        String
+  phone       String?
+  email       String?
+  /// Internal studio notes. Never shown in the customer portal.
+  notes       String?
+  isSynthetic Boolean   @default(false)
+  archivedAt  DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  studio             Studio              @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  measurementProfile MeasurementProfile?
+  orders             Order[]
+
+  @@unique([id, studioId])
+  @@index([studioId, name])
+  @@index([studioId, updatedAt])
+}
+
+/// Current measurements entered by people. Agreement versions copy the values they use,
+/// so editing this profile never changes a published or approved brief.
+model MeasurementProfile {
+  id         String          @id @default(uuid(7)) @db.Uuid
+  studioId   String          @db.Uuid
+  customerId String          @unique @db.Uuid
+  unit       MeasurementUnit
+  /// [{ key, label, value }] — value is a decimal number in `unit`.
+  values     Json
+  recordedOn DateTime        @db.Date
+  takenBy    String?
+  notes      String?
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
+
+  customer Customer @relation(fields: [customerId, studioId], references: [id, studioId], onDelete: Cascade)
+
+  @@unique([customerId, studioId])
+}
+
+// ─────────────────────────────────────────────────────────────── orders
+
+model Order {
+  id                  String           @id @default(uuid(7)) @db.Uuid
+  studioId            String           @db.Uuid
+  customerId          String           @db.Uuid
+  orderNumber         Int
+  title               String
+  garmentType         String
+  agreementStatus     AgreementStatus  @default(DRAFT)
+  productionStatus    ProductionStatus @default(NOT_STARTED)
+  /// The approved agreement currently in force. Only the approval transaction changes it.
+  activeVersionId     String?          @unique @db.Uuid
+  /// Promised delivery date of the active approved version (calendar date, studio time zone).
+  dueDate             DateTime?        @db.Date
+  firstApprovedAt     DateTime?        @db.Timestamptz(3)
+  productionUpdatedAt DateTime?        @db.Timestamptz(3)
+  cancelledAt         DateTime?        @db.Timestamptz(3)
+  cancelReason        String?
+  archivedAt          DateTime?        @db.Timestamptz(3)
+  isSynthetic         Boolean          @default(false)
+  createdById         String?          @db.Uuid
+  createdAt           DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime         @updatedAt @db.Timestamptz(3)
+
+  studio        Studio        @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  customer      Customer      @relation(fields: [customerId, studioId], references: [id, studioId], onDelete: NoAction)
+  activeVersion BriefVersion? @relation("OrderActiveVersion", fields: [activeVersionId], references: [id], onDelete: NoAction)
+
+  sources           SourceAsset[]
+  extractionJobs    ExtractionJob[]
+  extractionResults ExtractionResult[]
+  suggestions       BriefSuggestion[]
+  draft             BriefDraft?
+  issues            ClarificationIssue[]
+  versions          BriefVersion[]         @relation("OrderVersions")
+  versionSources    BriefVersionSource[]
+  approvalRequests  ApprovalRequest[]
+  portalAccesses    CustomerPortalAccess[]
+  approvalEvents    ApprovalEvent[]
+  changeRequests    ChangeRequest[]
+  payments          ManualPayment[]
+  usageEvents       UsageEvent[]
+  auditEvents       AuditEvent[]
+
+  @@unique([id, studioId])
+  @@unique([studioId, orderNumber])
+  @@index([studioId, agreementStatus])
+  @@index([studioId, productionStatus])
+  @@index([studioId, dueDate])
+  @@index([studioId, updatedAt])
+  @@index([customerId])
+}
+
+// ─────────────────────────────────────────────────────────────── sources & AI processing
+
+/// Original customer material. Text and files are never overwritten; corrections create new rows.
+model SourceAsset {
+  id              String                @id @default(uuid(7)) @db.Uuid
+  studioId        String                @db.Uuid
+  orderId         String                @db.Uuid
+  kind            SourceKind
+  origin          SourceOrigin
+  label           String
+  sender          String?
+  context         String?
+  /// Original text for TEXT sources.
+  textContent     String?
+  /// Private object key of the original upload.
+  storageKey      String?
+  /// Private object key of the sanitized display derivative (images: re-encoded, metadata stripped).
+  previewKey      String?
+  mimeType        String?
+  byteSize        Int?
+  sha256          String
+  originalName    String?
+  width           Int?
+  height          Int?
+  /// Audio duration measured server-side; null when it cannot be determined reliably.
+  durationMs      Int?
+  processingState SourceProcessingState @default(NOT_PROCESSED)
+  processingError String?
+  idempotencyKey  String?
+  isSynthetic     Boolean               @default(false)
+  addedById       String?               @db.Uuid
+  addedAt         DateTime              @default(now()) @db.Timestamptz(3)
+  /// Removed from the working set. The row (and file) is kept while an agreement version references it.
+  removedAt       DateTime?             @db.Timestamptz(3)
+  /// Stored file erased (only for removed sources that no agreement version references).
+  contentDeletedAt DateTime?            @db.Timestamptz(3)
+
+  order          Order                @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  transcripts    Transcript[]
+  versionSources BriefVersionSource[]
+
+  @@unique([id, studioId])
+  @@unique([id, orderId])
+  @@unique([orderId, idempotencyKey])
+  @@index([orderId, addedAt])
+}
+
+/// Machine transcripts and human corrections are separate rows; the latest row is current.
+model Transcript {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  studioId    String           @db.Uuid
+  sourceId    String           @db.Uuid
+  origin      TranscriptOrigin
+  text        String
+  /// [{ startMs, endMs, text }] — only stored when validated against the audio duration.
+  segments    Json?
+  language    String?
+  provider    String?
+  model       String?
+  jobId       String?          @db.Uuid
+  correctsId  String?          @db.Uuid
+  createdById String?          @db.Uuid
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+
+  source      SourceAsset  @relation(fields: [sourceId, studioId], references: [id, studioId], onDelete: Cascade)
+  corrects    Transcript?  @relation("TranscriptCorrections", fields: [correctsId], references: [id], onDelete: NoAction)
+  corrections Transcript[] @relation("TranscriptCorrections")
+
+  @@index([sourceId, createdAt])
+}
+
+/// Durable job record. PostgreSQL is the source of truth; BullMQ only dispatches.
+model ExtractionJob {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  studioId       String    @db.Uuid
+  orderId        String    @db.Uuid
+  status         JobStatus @default(QUEUED)
+  mode           AiRunMode
+  /// Hash of the fixed input set (source ids + content hashes + transcript ids).
+  inputHash      String
+  /// [{ sourceId, kind, sha256, transcriptId }]
+  inputSources   Json
+  /// Brief draft revision when the job was created (late results never overwrite newer edits).
+  draftRevision  Int
+  idempotencyKey String?
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(3)
+  nextAttemptAt  DateTime  @default(now()) @db.Timestamptz(3)
+  leaseExpiresAt DateTime? @db.Timestamptz(3)
+  dispatchedAt   DateTime? @db.Timestamptz(3)
+  startedAt      DateTime? @db.Timestamptz(3)
+  finishedAt     DateTime? @db.Timestamptz(3)
+  durationMs     Int?
+  errorCode      String?
+  /// Safe, user-facing message. Never contains raw customer content.
+  errorMessage   String?
+  provider       String?
+  model          String?
+  promptVersion  String?
+  createdById    String?   @db.Uuid
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  order  Order             @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  result ExtractionResult?
+
+  @@unique([id, studioId])
+  @@unique([orderId, idempotencyKey])
+  @@index([status, nextAttemptAt])
+  @@index([studioId, createdAt])
+  @@index([orderId, createdAt])
+}
+
+model ExtractionResult {
+  id                   String    @id @default(uuid(7)) @db.Uuid
+  studioId             String    @db.Uuid
+  orderId              String    @db.Uuid
+  jobId                String    @unique @db.Uuid
+  schemaVersion        String
+  mode                 AiRunMode
+  /// Validated, evidence-checked structured suggestions.
+  payload              Json
+  /// Counts of rejected/downgraded evidence and warnings produced during validation.
+  validation           Json
+  provider             String
+  model                String
+  promptVersion        String
+  durationMs           Int
+  inputTokens          Int?
+  outputTokens         Int?
+  draftRevisionAtStart Int
+  inputHash            String
+  createdAt            DateTime  @default(now()) @db.Timestamptz(3)
+
+  job         ExtractionJob        @relation(fields: [jobId, studioId], references: [id, studioId], onDelete: Cascade)
+  order       Order                @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  suggestions BriefSuggestion[]
+  issues      ClarificationIssue[]
+
+  @@unique([id, studioId])
+  @@unique([jobId, studioId])
+  @@index([orderId, createdAt])
+}
+
+/// A single AI suggestion. Never applied to the draft until a person accepts it.
+model BriefSuggestion {
+  id               String           @id @default(uuid(7)) @db.Uuid
+  studioId         String           @db.Uuid
+  orderId          String           @db.Uuid
+  resultId         String           @db.Uuid
+  fieldKey         String
+  proposedValue    Json
+  unit             String?
+  basis            EvidenceBasis
+  evidence         Json
+  needsHumanReview Boolean
+  status           SuggestionStatus @default(PENDING)
+  decidedValue     Json?
+  decidedAt        DateTime?        @db.Timestamptz(3)
+  decidedById      String?          @db.Uuid
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+
+  result ExtractionResult @relation(fields: [resultId, studioId], references: [id, studioId], onDelete: Cascade)
+  order  Order            @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+
+  @@index([orderId, status])
+  @@index([resultId])
+}
+
+// ─────────────────────────────────────────────────────────────── brief & agreement versions
+
+/// Mutable working brief. `revision` is the optimistic-concurrency counter for saves.
+model BriefDraft {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  studioId        String   @db.Uuid
+  orderId         String   @unique @db.Uuid
+  revision        Int      @default(1)
+  /// Customer-facing brief content (see contracts/brief.ts).
+  content         Json
+  /// Studio-only notes. Never copied into a version snapshot.
+  internalNotes   String?
+  /// Approved version this draft revises (null before first approval).
+  baseVersionId   String?  @db.Uuid
+  /// Change request this draft is currently building a proposal for.
+  changeRequestId String?  @db.Uuid
+  updatedById     String?  @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  order         Order          @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  baseVersion   BriefVersion?  @relation("DraftBaseVersion", fields: [baseVersionId], references: [id], onDelete: NoAction)
+  changeRequest ChangeRequest? @relation("DraftChangeRequest", fields: [changeRequestId], references: [id], onDelete: NoAction)
+
+  @@unique([orderId, studioId])
+}
+
+model ClarificationIssue {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  studioId       String      @db.Uuid
+  orderId        String      @db.Uuid
+  kind           IssueKind
+  origin         IssueOrigin
+  fieldKey       String?
+  question       String
+  /// Conflicts: [{ value, evidence }]
+  candidates     Json?
+  evidence       Json?
+  resultId       String?     @db.Uuid
+  status         IssueStatus @default(OPEN)
+  resolutionNote String?
+  resolvedValue  Json?
+  resolvedAt     DateTime?   @db.Timestamptz(3)
+  resolvedById   String?     @db.Uuid
+  createdAt      DateTime    @default(now()) @db.Timestamptz(3)
+
+  order  Order             @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  result ExtractionResult? @relation(fields: [resultId], references: [id], onDelete: NoAction)
+
+  @@index([orderId, status])
+}
+
+/// Immutable, complete agreement snapshot. Content columns are protected by a database trigger.
+model BriefVersion {
+  id                    String       @id @default(uuid(7)) @db.Uuid
+  studioId              String       @db.Uuid
+  orderId               String       @db.Uuid
+  versionNumber         Int
+  kind                  ApprovalKind
+  snapshot              Json
+  /// SHA-256 of the canonical snapshot JSON (consistency check, not tamper-proofing).
+  contentHash           String
+  sourceDraftRevision   Int
+  publishIdempotencyKey String?
+  basedOnVersionId      String?      @db.Uuid
+  changeRequestId       String?      @db.Uuid
+  totalPriceKobo        BigInt
+  depositRequiredKobo   BigInt
+  deliveryDate          DateTime     @db.Date
+  fittingDate           DateTime?    @db.Date
+  publishedById         String?      @db.Uuid
+  publishedAt           DateTime     @default(now()) @db.Timestamptz(3)
+
+  order            Order                  @relation("OrderVersions", fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  activeFor        Order?                 @relation("OrderActiveVersion")
+  basedOn          BriefVersion?          @relation("VersionLineage", fields: [basedOnVersionId], references: [id], onDelete: NoAction)
+  derived          BriefVersion[]         @relation("VersionLineage")
+  approvalRequest  ApprovalRequest?
+  portalAccesses   CustomerPortalAccess[]
+  approvalEvents   ApprovalEvent[]
+  changeBases      ChangeRequest[]        @relation("ChangeBase")
+  changeProposals  ChangeRequest[]        @relation("ChangeProposal")
+  draftBases       BriefDraft[]           @relation("DraftBaseVersion")
+  sourceReferences BriefVersionSource[]
+
+  @@unique([orderId, versionNumber])
+  @@unique([orderId, publishIdempotencyKey])
+  @@unique([id, orderId])
+  @@unique([id, studioId])
+}
+
+/// Sources a version depends on (selected references and cited evidence). The NO ACTION foreign key
+/// keeps referenced sources from being deleted.
+model BriefVersionSource {
+  versionId String            @db.Uuid
+  sourceId  String            @db.Uuid
+  orderId   String            @db.Uuid
+  studioId  String            @db.Uuid
+  role      VersionSourceRole
+
+  version BriefVersion @relation(fields: [versionId, orderId], references: [id, orderId], onDelete: Cascade)
+  source  SourceAsset  @relation(fields: [sourceId, orderId], references: [id, orderId], onDelete: NoAction)
+  order   Order        @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+
+  @@id([versionId, sourceId, role])
+  @@index([sourceId])
+}
+
+// ─────────────────────────────────────────────────────────────── approvals & customer access
+
+/// The decision object for exactly one published version.
+model ApprovalRequest {
+  id              String                @id @default(uuid(7)) @db.Uuid
+  studioId        String                @db.Uuid
+  orderId         String                @db.Uuid
+  versionId       String                @unique @db.Uuid
+  kind            ApprovalKind
+  /// Active approved version when the request was created (stale-version protection for revisions).
+  baseVersionId   String?               @db.Uuid
+  changeRequestId String?               @db.Uuid
+  status          ApprovalRequestStatus @default(PENDING)
+  /// Equals orderId while PENDING, null otherwise: the unique index allows one pending request per order.
+  pendingSlot     String?               @unique @db.Uuid
+  createdById     String?               @db.Uuid
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
+  closedAt        DateTime?             @db.Timestamptz(3)
+  closedReason    String?
+
+  order    Order                  @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  version  BriefVersion           @relation(fields: [versionId, orderId], references: [id, orderId], onDelete: Cascade)
+  accesses CustomerPortalAccess[]
+  event    ApprovalEvent?
+
+  @@unique([versionId, orderId])
+  @@index([orderId, createdAt])
+}
+
+/// A purpose-limited customer link. Possession of the token is the authentication mechanism.
+model CustomerPortalAccess {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  studioId          String              @db.Uuid
+  orderId           String              @db.Uuid
+  versionId         String              @db.Uuid
+  approvalRequestId String?             @db.Uuid
+  purpose           PortalAccessPurpose
+  /// SHA-256 of the 256-bit random token. The raw token is shown to the studio once.
+  tokenHash         String              @unique
+  expiresAt         DateTime            @db.Timestamptz(3)
+  revokedAt         DateTime?           @db.Timestamptz(3)
+  revokedReason     String?
+  lastUsedAt        DateTime?           @db.Timestamptz(3)
+  createdById       String?             @db.Uuid
+  createdAt         DateTime            @default(now()) @db.Timestamptz(3)
+
+  order           Order            @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  version         BriefVersion     @relation(fields: [versionId, orderId], references: [id, orderId], onDelete: Cascade)
+  approvalRequest ApprovalRequest? @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+/// Exactly one decision per approval request (unique approvalRequestId).
+model ApprovalEvent {
+  id                String       @id @default(uuid(7)) @db.Uuid
+  studioId          String       @db.Uuid
+  orderId           String       @db.Uuid
+  approvalRequestId String       @unique @db.Uuid
+  versionId         String       @db.Uuid
+  contentHash       String
+  decision          DecisionType
+  /// Self-reported by the person using the link. Not a verified identity or legal signature.
+  customerName      String
+  comment           String?
+  confirmationText  String?
+  accessId          String?      @db.Uuid
+  userAgent         String?
+  createdAt         DateTime     @default(now()) @db.Timestamptz(3)
+
+  order           Order           @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  approvalRequest ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  version         BriefVersion    @relation(fields: [versionId, orderId], references: [id, orderId], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────── changes & money
+
+model ChangeRequest {
+  id                  String              @id @default(uuid(7)) @db.Uuid
+  studioId            String              @db.Uuid
+  orderId             String              @db.Uuid
+  baseVersionId       String              @db.Uuid
+  initiator           ChangeInitiator
+  status              ChangeRequestStatus
+  /// Equals orderId while the request is open, null once closed: one open change per order.
+  openSlot            String?             @unique @db.Uuid
+  /// [{ name, message, at }] — customer messages, self-reported names.
+  customerMessages    Json                @default("[]")
+  /// Studio's explanation of the proposed change (shown to the customer).
+  reason              String?
+  proposedVersionId   String?             @db.Uuid
+  priceAdjustmentKobo BigInt?
+  decisionNote        String?
+  createdById         String?             @db.Uuid
+  createdAt           DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(3)
+  closedAt            DateTime?           @db.Timestamptz(3)
+
+  order           Order         @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  baseVersion     BriefVersion  @relation("ChangeBase", fields: [baseVersionId, orderId], references: [id, orderId], onDelete: Cascade)
+  proposedVersion BriefVersion? @relation("ChangeProposal", fields: [proposedVersionId], references: [id], onDelete: NoAction)
+  drafts          BriefDraft[]  @relation("DraftChangeRequest")
+
+  @@index([orderId, createdAt])
+}
+
+/// Recorded by the studio. Not a provider-verified transaction. Corrections are reversals.
+model ManualPayment {
+  id               String      @id @default(uuid(7)) @db.Uuid
+  studioId         String      @db.Uuid
+  orderId          String      @db.Uuid
+  kind             PaymentKind
+  /// Positive magnitude in kobo.
+  amountKobo       BigInt
+  /// Effect on money received: + deposit/payment, − refund, reversal = −(reversed entry).
+  signedAmountKobo BigInt
+  method           String?
+  receivedOn       DateTime    @db.Date
+  note             String?
+  reversesId       String?     @unique @db.Uuid
+  idempotencyKey   String?
+  recordedById     String?     @db.Uuid
+  createdAt        DateTime    @default(now()) @db.Timestamptz(3)
+
+  order      Order          @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+  reverses   ManualPayment? @relation("PaymentReversal", fields: [reversesId], references: [id], onDelete: NoAction)
+  reversedBy ManualPayment? @relation("PaymentReversal")
+
+  @@unique([orderId, idempotencyKey])
+  @@index([orderId, createdAt])
+}
+
+/// Counts a newly approved order once (unique per order + type). Revisions never add usage.
+model UsageEvent {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  studioId  String   @db.Uuid
+  orderId   String   @db.Uuid
+  type      String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId, studioId], references: [id, studioId], onDelete: Cascade)
+
+  @@unique([orderId, type])
+  @@index([studioId, type, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────── history & operations
+
+/// Append-only activity history (UPDATE/DELETE blocked by a database trigger).
+model AuditEvent {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  studioId    String    @db.Uuid
+  orderId     String?   @db.Uuid
+  actorType   ActorType
+  actorUserId String?   @db.Uuid
+  /// Display label (user name or self-reported customer name).
+  actorLabel  String?
+  type        String
+  summary     String
+  data        Json?
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+
+  studio Studio @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  order  Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([studioId, createdAt])
+  @@index([orderId, createdAt])
+}
+
+/// Fixed-window rate-limit counters shared by all API instances.
+model RateLimitBucket {
+  key         String
+  windowStart DateTime @db.Timestamptz(3)
+  count       Int      @default(0)
+  expiresAt   DateTime @db.Timestamptz(3)
+
+  @@id([key, windowStart])
+  @@index([expiresAt])
+}
+
+/// Liveness record written by each worker process so the UI can say whether processing is online.
+model WorkerHeartbeat {
+  id          String   @id
+  startedAt   DateTime @db.Timestamptz(3)
+  lastSeenAt  DateTime @db.Timestamptz(3)
+  backend     String
+  concurrency Int
+
+  @@index([lastSeenAt])
+}
