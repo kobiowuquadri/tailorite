@@ -41,3 +41,12 @@ MinIO stopped publishing community Docker images in October 2025. Compose uses C
 
 ## D12 — Browser tests run against an isolated stack
 `pnpm test:e2e` (web folder) starts the API and worker on :4100 against a freshly recreated `<db>_e2e` database with the fake AI provider, and a production build of the web app on :3100. The script refuses to reset any database whose name does not end in `_e2e`.
+
+## D13 — Job-table polling for small hosted databases
+The production database (Clever Cloud PostgreSQL DEV plan) allows 5 connections for the role. BullMQ's PostgreSQL backend needs its own pools and Redis would be another service, so `JOB_QUEUE_BACKEND=database` was added: the worker polls `ExtractionJob` for due rows every `JOB_POLL_INTERVAL_MS` and claims each with the same status-conditioned update as before. API + worker then use 3–4 connections with `DATABASE_POOL_MAX=2` (measured). Trade-off: up to 2 s before a run starts.
+
+## D14 — Hosting add-on variables as fallbacks
+On Clever Cloud, linked add-ons inject `POSTGRESQL_ADDON_URI` and `CELLAR_ADDON_*`. When Tailorite's own variables are empty the API uses those (database over TLS with `sslmode=require&uselibpqcompat=true`; Cellar host prefixed with `https://`). Explicit `DATABASE_URL` / `S3_*` always win. The S3 client only sends checksums when an operation requires them, because Cellar and other S3-compatible services reject the newer defaults.
+
+## D15 — TLS to the hosted database without certificate verification
+Clever Cloud presents a self-signed certificate, so `sslmode=require` (libpq semantics) is used: traffic is encrypted but the server certificate is not verified. Verifying it would need the provider's CA certificate (`sslrootcert`).

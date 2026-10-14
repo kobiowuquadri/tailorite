@@ -6,7 +6,7 @@ Commands actually run on the development machine (Windows 11, Node 24.16, pnpm 1
 
 | Where | Command | Result |
 | --- | --- | --- |
-| backend | `pnpm test` | **7 files, 50 tests passed** (real PostgreSQL, fresh database per run) |
+| backend | `pnpm test` | **9 files, 54 tests passed** (real PostgreSQL, fresh database per run) |
 | backend | `pnpm lint` (oxlint, type-aware) | 0 warnings, 0 errors |
 | backend | `pnpm typecheck` | clean |
 | web | `pnpm lint` · `pnpm typecheck` · `pnpm contracts:check` | clean · clean · in sync (13 files) |
@@ -29,6 +29,8 @@ Commands actually run on the development machine (Windows 11, Node 24.16, pnpm 1
 | Upload validation and private storage authorization | `orders-sources-brief` → validates uploads by content, size and type; serves private files only to the owning studio |
 | Timestamps and delivery dates in Africa/Lagos | `dates.spec` |
 | Demo sandboxes isolated and purged; presenter seed only resets the flagged studio | `demo` |
+| Job-table polling queue (no queue service) claims each job once | `database-queue` |
+| Hosting add-on variables (Clever Cloud PostgreSQL/Cellar) and production storage rule | `config.spec` |
 
 ### Browser journeys (`tailorite-frontend/e2e`)
 Run against an isolated stack: API + worker on :4100 with a freshly created `tailorite_e2e` database and the **deterministic fake AI provider**, production web build on :3100.
@@ -41,6 +43,11 @@ Run against an isolated stack: API + worker on :4100 with a freshly created `tai
 
 ## Manual verification (browser, development stack)
 Walked through in Chromium with screenshots: demo sandbox, example extraction, conflict resolution, sharing, mobile approval, deposit, change-request link, revision comparison on the phone, V2 approval (balance ₦70,000), version page, print view (approved) and draft print, expired/invalid link pages, settings, landing page (no horizontal scroll at 412 px), presenter demo sign-in after `pnpm demo:seed`. `GET /api/health/ready` returned `ok` for database, storage and queue.
+
+## Production database (Clever Cloud PostgreSQL), 2026-10-14
+- Inspected first: PostgreSQL 15.4, UTF-8, TLS on with a self-signed certificate, role limited to **5 connections**, no application tables (only the provider's PostGIS/tiger tables).
+- `prisma migrate deploy`: 4 migrations applied; `prisma migrate status`: up to date; 8/8 core tables, 12 triggers and the 4 guard functions present.
+- API and worker run locally against it with `DATABASE_POOL_MAX=2`, `JOB_QUEUE_BACKEND=database`: `/api/health/ready` ok (database, queue "Job table polling"); 3 connections held by API + worker. No application data was written (the test worker's heartbeat row was removed).
 
 ## Problems found during verification and fixed
 - A first AI run was reported as out of date because the job's own transcript changed the input fingerprint → the processed input now includes transcripts the job produced (regression assertion in `demo.test.ts`).

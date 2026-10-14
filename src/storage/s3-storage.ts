@@ -33,6 +33,10 @@ export class S3StorageService extends StorageService {
       region: settings.region,
       forcePathStyle: settings.forcePathStyle,
       credentials: { accessKeyId: settings.accessKeyId, secretAccessKey: settings.secretAccessKey },
+      // Only send/verify the newer default checksums when an operation requires them: several
+      // S3-compatible services (e.g. Clever Cloud Cellar) reject them otherwise.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
   }
 

@@ -18,8 +18,15 @@ export class QueueService implements OnModuleDestroy {
     return this.queue;
   }
 
+  /** True when workers read due jobs straight from the ExtractionJob table (no message queue). */
+  get pollsDatabase(): boolean {
+    return this.config.env.JOB_QUEUE_BACKEND === 'database';
+  }
+
   /** Returns false when dispatch failed; the job stays QUEUED in PostgreSQL for recovery. */
   async dispatchExtraction(extractionJobId: string, attempt: number, delayMs = 0): Promise<boolean> {
+    // The QUEUED row (with its next attempt time) is the dispatch; workers poll for it.
+    if (this.pollsDatabase) return true;
     try {
       await withTimeout(
         this.getQueue().add(
@@ -49,6 +56,8 @@ export class QueueService implements OnModuleDestroy {
   }
 
   async check(): Promise<void> {
+    // In polling mode the queue is the database, which readiness checks separately.
+    if (this.pollsDatabase) return;
     await withTimeout(this.getQueue().waitUntilReady(), 5000, 'queue readiness');
   }
 

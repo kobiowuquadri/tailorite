@@ -2,6 +2,13 @@
 import 'dotenv/config';
 import { defineConfig, env } from 'prisma/config';
 
+// Same fallback as src/config/env.ts: a linked Clever Cloud PostgreSQL add-on provides
+// POSTGRESQL_ADDON_URI; connect to it over TLS (its certificate is self-signed).
+if (!process.env.DATABASE_URL?.trim() && process.env.POSTGRESQL_ADDON_URI) {
+  const uri = process.env.POSTGRESQL_ADDON_URI;
+  process.env.DATABASE_URL = /[?&]sslmode=/.test(uri) ? uri : `${uri}${uri.includes('?') ? '&' : '?'}sslmode=require&uselibpqcompat=true`;
+}
+
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {

@@ -51,3 +51,5 @@ What is implemented, and the gaps we know about. Controls marked "tested" have a
 - Rate limits are per IP; customers behind shared mobile carrier IPs share limits.
 - Customer identity is not verified (link possession plus a typed name).
 - Dependency vulnerability scanning (`pnpm audit`) and a third-party security review have not been run.
+- The production database connection is encrypted but its self-signed certificate is not verified (`sslmode=require`).
+- On Clever Cloud `TRUST_PROXY=true` is used because requests pass through two proxies; a client could then spoof `X-Forwarded-For` to dodge per-IP limits (per-email login limits still apply). Set the exact hop count once it has been measured.

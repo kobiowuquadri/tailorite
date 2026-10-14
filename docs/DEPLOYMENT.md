@@ -1,10 +1,83 @@
 # Deployment
 
-**Status:** not deployed. The Dockerfiles and Compose file below were written for this release but could not be built or run on the development machine (no Docker). Treat the first run as a test and follow the verification checklist.
+**Status:** not deployed yet. The production database (Clever Cloud PostgreSQL) exists and all migrations were applied to it on 2026-10-14; the API and worker were run locally against it with the settings below (`/api/health/ready` ok, 3 connections in use). The apps themselves are not deployed and there is no public URL.
 
-## Path: one Linux VM with Docker Compose and Caddy
+## Path A (current target): Clever Cloud
 
-Everything runs on one host behind Caddy, which serves the web app and routes `/api/*` to the API on the same origin (first-party cookies, no CORS) and obtains HTTPS certificates automatically.
+Two Node.js applications deployed from the same git repository (one folder each), plus two add-ons:
+
+| Clever Cloud resource | What it runs |
+| --- | --- |
+| PostgreSQL add-on (exists) | All data. DEV plan: **5 connections** for the role, PostgreSQL 15, self-signed TLS certificate. |
+| Cellar add-on (S3-compatible) | Customer images and voice notes (private bucket). |
+| Node.js app `tailorite-api` | API (`dist/main.js`) and, in the same instance, the worker (`dist/worker.js`). |
+| Node.js app `tailorite-web` | Next.js web app; forwards `/api/*` to the API, so the browser only ever talks to the web origin. |
+
+### 1. Storage (Cellar)
+1. Console → **Create** → **an add-on** → **Cellar S3 storage**, then link it to `tailorite-api`.
+2. In the add-on dashboard, create a bucket (lowercase, no underscores; names are global), e.g. `tailorite-media-<something-unique>`. Leave it private — the API serves files only after checking who is asking.
+3. Linking injects `CELLAR_ADDON_HOST`, `CELLAR_ADDON_KEY_ID` and `CELLAR_ADDON_KEY_SECRET`; the API uses them as `S3_ENDPOINT` and credentials automatically.
+
+### 2. API app (`tailorite-api`)
+Create a **Node.js** application from the repository, instance size at least 1 GB RAM (API + worker + image processing), and link both add-ons. Environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `APP_FOLDER` | `tailorite-backend` |
+| `NODE_ENV` | `production` |
+| `PORT` | `8080` (Clever Cloud routes traffic to 8080) |
+| `CC_NODE_DEV_DEPENDENCIES` | `install` (the build needs the Nest and Prisma CLIs) |
+| `CC_POST_BUILD_HOOK` | `pnpm build` |
+| `CC_PRE_RUN_HOOK` | `pnpm db:migrate` (applies new migrations before each start) |
+| `CC_RUN_COMMAND` | `node --enable-source-maps dist/main.js` |
+| `CC_WORKER_COMMAND` | `node --enable-source-maps dist/worker.js` |
+| `CC_WORKER_RESTART` | `always` |
+| `CC_HEALTH_CHECK_PATH` | `/api/health/live` |
+| `APP_ORIGIN` | the **web** app's URL, e.g. `https://tailorite.cleverapps.io` |
+| `SESSION_SECRET` | 32+ random characters (`node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`) |
+| `COOKIE_SECURE` | `true` |
+| `TRUST_PROXY` | `true` (requests arrive through Clever Cloud's load balancers and the web app; see SECURITY.md) |
+| `DATABASE_POOL_MAX` | `2` — with the worker this uses 3–4 of the 5 allowed connections |
+| `JOB_QUEUE_BACKEND` | `database` (no Redis; the worker polls the job table and opens no extra connections) |
+| `WORKER_CONCURRENCY` | `1` |
+| `STORAGE_DRIVER` | `s3` |
+| `S3_BUCKET` | the bucket from step 1 |
+| `S3_REGION` | `default` (what Cellar expects) |
+| `AI_MODE` / `GEMINI_API_KEY` | `live` and your key from Google AI Studio — or `off` (manual) / `fixture` (labelled demo examples) |
+| `DEMO_SANDBOX_ENABLED` | `true` for the public "Explore demo" button |
+
+`DATABASE_URL` is optional when the PostgreSQL add-on is linked: the API then uses `POSTGRESQL_ADDON_URI` with `sslmode=require&uselibpqcompat=true` (encrypted; Clever Cloud's certificate is self-signed so it is not verified). Set `DATABASE_URL` explicitly only to use another database.
+
+### 3. Web app (`tailorite-web`)
+Create a second **Node.js** application from the same repository. If the build runs out of memory, give it a larger build instance in the app's settings.
+
+| Variable | Value |
+| --- | --- |
+| `APP_FOLDER` | `tailorite-frontend` |
+| `NODE_ENV` | `production` |
+| `PORT` | `8080` |
+| `CC_NODE_DEV_DEPENDENCIES` | `install` |
+| `CC_POST_BUILD_HOOK` | `pnpm build` (also checks that the shared contracts match `../tailorite-backend`) |
+| `CC_RUN_COMMAND` | `pnpm start` |
+| `API_INTERNAL_URL` | the API app's URL, e.g. `https://tailorite-api.cleverapps.io` — fixed at build time, so redeploy the web app after changing it |
+
+Give each app a domain under **Domain names** (free `*.cleverapps.io` names work). The web app's address is the product URL and must equal the API's `APP_ORIGIN`.
+
+### 4. Verify
+1. `https://<api domain>/api/health/ready` → `"status":"ok"` with database, storage (s3) and queue ("Job table polling").
+2. Open the web URL, sign up, create an order, upload a picture (checks Cellar), share it and approve from a phone.
+3. Settings → AI availability shows "Background worker is running".
+
+### 5. Optional: presenter demo studio
+The seed uploads demo media, so it must run with the production database **and** Cellar settings. From a machine with the repository: put `DATABASE_URL`, `STORAGE_DRIVER=s3`, `S3_ENDPOINT=https://cellar-c2.services.clever-cloud.com`, `S3_BUCKET`, `S3_REGION=default`, the Cellar keys, `NODE_ENV=production`, `ALLOW_DEMO_SEED=true`, a `SESSION_SECRET` and `DEMO_OWNER_PASSWORD` in `tailorite-backend/.env.production` (never commit it), then `pnpm build && node --env-file=.env.production dist/cli/demo-seed.js`. It only creates or resets the flagged "Amina Atelier" studio.
+
+### Notes for this plan
+- The 5-connection limit is tight: while Clever Cloud swaps an old instance for a new one, both may briefly hold connections and some requests can fail with "too many connections". A larger PostgreSQL plan removes this.
+- Polling adds up to `JOB_POLL_INTERVAL_MS` (2 s) before an AI run starts.
+
+## Path B: one Linux VM with Docker Compose and Caddy
+
+Not built or run yet (no Docker on the development machine). Everything runs on one host behind Caddy, which serves the web app and routes `/api/*` to the API on the same origin (first-party cookies, no CORS) and obtains HTTPS certificates automatically.
 
 ```
 Internet → Caddy :443 ─┬─ /api/* → api:4000 (NestJS)

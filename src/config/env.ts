@@ -28,7 +28,10 @@ const EnvSchema = z
     SESSION_IDLE_DAYS: positiveInt.default(7),
     COOKIE_SECURE: bool.default(false),
 
-    JOB_QUEUE_BACKEND: z.enum(['redis', 'postgres']).default('postgres'),
+    /** redis: BullMQ on Redis · postgres: BullMQ's PostgreSQL backend · database: the worker polls the
+     *  ExtractionJob table directly (no extra connections; for small databases with tight limits). */
+    JOB_QUEUE_BACKEND: z.enum(['redis', 'postgres', 'database']).default('postgres'),
+    JOB_POLL_INTERVAL_MS: positiveInt.min(250).max(60_000).default(2000),
     REDIS_URL: z.string().optional(),
     WORKER_CONCURRENCY: positiveInt.max(16).default(2),
     EXTRACTION_MAX_ATTEMPTS: positiveInt.max(10).default(3),
@@ -110,10 +113,32 @@ export class ConfigError extends Error {
 }
 
 /** Parses process.env into typed configuration, collecting every problem into one readable error. */
+/** Encrypted connection without certificate verification (libpq `sslmode=require` semantics). */
+export const DATABASE_TLS_PARAMS = 'sslmode=require&uselibpqcompat=true';
+
+/**
+ * Hosting add-ons inject their own variable names (Clever Cloud: PostgreSQL and Cellar). They are
+ * used only when Tailorite's own variables are not set, so explicit configuration always wins.
+ */
+export function withPlatformDefaults(source: Record<string, string | undefined>): Record<string, string | undefined> {
+  const env = { ...source };
+  const blank = (key: string) => !env[key] || env[key]!.trim() === '';
+  if (blank('DATABASE_URL') && env.POSTGRESQL_ADDON_URI) {
+    const uri = env.POSTGRESQL_ADDON_URI;
+    env.DATABASE_URL = /[?&]sslmode=/.test(uri) ? uri : `${uri}${uri.includes('?') ? '&' : '?'}${DATABASE_TLS_PARAMS}`;
+  }
+  if (blank('S3_ENDPOINT') && env.CELLAR_ADDON_HOST) {
+    env.S3_ENDPOINT = /^https?:\/\//.test(env.CELLAR_ADDON_HOST) ? env.CELLAR_ADDON_HOST : `https://${env.CELLAR_ADDON_HOST}`;
+  }
+  if (blank('S3_ACCESS_KEY_ID') && env.CELLAR_ADDON_KEY_ID) env.S3_ACCESS_KEY_ID = env.CELLAR_ADDON_KEY_ID;
+  if (blank('S3_SECRET_ACCESS_KEY') && env.CELLAR_ADDON_KEY_SECRET) env.S3_SECRET_ACCESS_KEY = env.CELLAR_ADDON_KEY_SECRET;
+  return env;
+}
+
 export function parseEnv(source: Record<string, string | undefined> = process.env): Env {
   // Treat empty strings as "not set" so optional values in .env files behave intuitively.
   const cleaned = Object.fromEntries(
-    Object.entries(source).filter(([, value]) => value !== undefined && value.trim() !== ''),
+    Object.entries(withPlatformDefaults(source)).filter(([, value]) => value !== undefined && value.trim() !== ''),
   );
   const result = EnvSchema.safeParse(cleaned);
   if (!result.success) {

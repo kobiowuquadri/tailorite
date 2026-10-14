@@ -21,7 +21,9 @@ export type ExtractionWorker = {
 };
 
 export function queueBackendLabel(config: AppConfig): string {
-  return config.env.JOB_QUEUE_BACKEND === 'redis' ? 'BullMQ (Redis)' : 'BullMQ (PostgreSQL backend)';
+  const backend = config.env.JOB_QUEUE_BACKEND;
+  if (backend === 'database') return 'Job table polling (PostgreSQL)';
+  return backend === 'redis' ? 'BullMQ (Redis)' : 'BullMQ (PostgreSQL backend)';
 }
 
 /** BullMQ's own tables live in the `bullmq` schema of the same database (migrated idempotently). */

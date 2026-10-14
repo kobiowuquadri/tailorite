@@ -34,12 +34,16 @@ Resume point for any new session: read this file, then `docs/DECISIONS.md`, then
 | 6 — Polish + demo | done | manual browser walkthrough (desktop + phone emulation), presenter seed |
 | 7 — Verification + handoff | done except Docker run, deployment and live AI | `docs/TEST-RESULTS.md` |
 
-Latest results: backend 50 tests passed, lint 0 findings, typecheck clean; web lint/typecheck clean; 6/6 Playwright journeys passed.
+Latest results: backend 54 tests passed, lint 0 findings, typecheck clean; web lint/typecheck clean; 6/6 Playwright journeys passed.
+
+## Deployment (Clever Cloud) — in progress
+- 2026-10-14: production PostgreSQL (Clever Cloud DEV plan, 5 connections, PostgreSQL 15) inspected and migrated; settings in `docs/DEPLOYMENT.md` (Path A) verified locally against it. The connection string lives only in `tailorite-backend/.env.production` (git-ignored) — never commit it.
+- Still to do: public GitHub repository and push, Cellar add-on + bucket, the two Node.js apps (`tailorite-api`, `tailorite-web`), `GEMINI_API_KEY`, then the verification checklist.
 
 ## Blockers (need the team)
 
 1. **Live AI:** set `GEMINI_API_KEY` in `tailorite-backend/.env` (variable name only — never paste the key into committed files), restart API and worker, run "Draft the brief with AI" on the demo order, and record the result in `docs/TEST-RESULTS.md`.
-2. **Docker / deployment:** run `docker compose --env-file deploy/compose.env --profile app up -d --build` on a machine with Docker and follow `docs/DEPLOYMENT.md`. No deployment URL exists yet.
+2. **Deployment:** follow `docs/DEPLOYMENT.md` Path A (Clever Cloud). No deployment URL exists yet.
 3. **Demo media:** the synthetic voice note was generated with Windows text-to-speech (`pnpm demo:assets`); a human-recorded synthetic voice note would make the live transcription demo more realistic.
 
 ## Known issues / notes
