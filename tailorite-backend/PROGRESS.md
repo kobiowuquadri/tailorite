@@ -1,7 +1,8 @@
 # Tailorite — build progress
 
-Resume point for any new session: read this file, then `docs/DECISIONS.md`, then `git log` in both
-`tailorite-backend` and `tailorite-frontend` (both are local git repositories; nothing has been pushed).
+Resume point for any new session: read this file, then `docs/DECISIONS.md`, then `git log` at the
+repository root (`TAILORITE/`, public: https://github.com/kobiowuquadri/tailorite). Both folders were
+separate repositories until 2026-10-14; their histories are merged into this one.
 
 ## Current status
 
@@ -19,7 +20,7 @@ Resume point for any new session: read this file, then `docs/DECISIONS.md`, then
 | Redis | Not installed — BullMQ runs on its PostgreSQL backend locally; Redis in Compose/production |
 | Object storage | Private local-disk driver locally; S3-compatible (Chainguard MinIO) in Compose |
 | Gemini credentials | `GEMINI_API_KEY` not set — live AI smoke test blocked |
-| Git | `tailorite-backend` and `tailorite-frontend` are separate local repositories |
+| Git | One repository at `TAILORITE/` containing both folders (public on GitHub) |
 
 ## Phases
 
@@ -38,7 +39,8 @@ Latest results: backend 54 tests passed, lint 0 findings, typecheck clean; web l
 
 ## Deployment (Clever Cloud) — in progress
 - 2026-10-14: production PostgreSQL (Clever Cloud DEV plan, 5 connections, PostgreSQL 15) inspected and migrated; settings in `docs/DEPLOYMENT.md` (Path A) verified locally against it. The connection string lives only in `tailorite-backend/.env.production` (git-ignored) — never commit it.
-- Still to do: public GitHub repository and push, Cellar add-on + bucket, the two Node.js apps (`tailorite-api`, `tailorite-web`), `GEMINI_API_KEY`, then the verification checklist.
+- 2026-10-14: public repository created and pushed: https://github.com/kobiowuquadri/tailorite (verified that no `.env*` files are published).
+- Still to do: Cellar add-on + bucket, the two Node.js apps (`tailorite-api`, `tailorite-web`), `GEMINI_API_KEY`, then the verification checklist.
 
 ## Blockers (need the team)
 
