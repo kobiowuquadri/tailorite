@@ -55,6 +55,8 @@ export type StudioDto = {
   timeZone: string;
   measurementUnit: MeasurementUnit;
   isDemo: boolean;
+  /** Set only for temporary demo sandboxes (deleted after this time). */
+  demoExpiresAt: string | null;
   createdAt: string;
 };
 

@@ -32,6 +32,28 @@ export async function currentInputSet(db: Tx, orderId: string): Promise<{ source
   };
 }
 
+/**
+ * The input set a job actually processed. Audio sources that had no transcript when the job was
+ * created use the transcript this job produced, so a job's own transcription never makes its
+ * result look out of date.
+ */
+export async function processedInputSet(db: Tx, jobId: string, inputs: InputSource[]): Promise<{ sources: InputSource[]; hash: string }> {
+  const untranscribed = inputs.filter((i) => i.kind === 'AUDIO' && !i.transcriptId).map((i) => i.sourceId);
+  const produced = untranscribed.length
+    ? await db.transcript.findMany({
+        where: { jobId, sourceId: { in: untranscribed } },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, sourceId: true },
+      })
+    : [];
+  const bySource = new Map<string, string>();
+  for (const t of produced) if (!bySource.has(t.sourceId)) bySource.set(t.sourceId, t.id);
+  const sources = inputs.map((i) =>
+    i.kind === 'AUDIO' && !i.transcriptId ? { ...i, transcriptId: bySource.get(i.sourceId) ?? null } : i,
+  );
+  return { sources, hash: contentHash(sources) };
+}
+
 export const jobInclude = {
   result: { include: { _count: { select: { suggestions: true, issues: true } } } },
 } satisfies Prisma.ExtractionJobInclude;
@@ -81,6 +103,6 @@ export function toJobDto(job: JobRow): ExtractionJobDto {
 }
 
 /** Exponential backoff for temporary failures: 20 s, 80 s, 5 min … (bounded). */
-export function backoffMs(attempt: number): number {
-  return Math.min(20_000 * 4 ** Math.max(0, attempt - 1), 10 * 60_000);
+export function backoffMs(attempt: number, baseMs = 20_000): number {
+  return Math.min(baseMs * 4 ** Math.max(0, attempt - 1), 10 * 60_000);
 }

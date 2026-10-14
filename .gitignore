@@ -22,3 +22,5 @@ src/generated/
 coverage/
 .vscode/*
 !.vscode/extensions.json
+# Real deployment settings (template: deploy/compose.env.example)
+deploy/compose.env

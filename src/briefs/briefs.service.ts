@@ -7,6 +7,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import {
   BriefContent,
   fieldLabel,
+  formatIsoDate,
   SUGGESTION_KEYS,
   type AcceptSuggestionInput,
   type BriefDto,
@@ -45,10 +46,17 @@ export function toIssueDto(i: IssueRow): IssueDto {
     evidence: (i.evidence as Evidence[] | null) ?? null,
     status: i.status,
     resolutionNote: i.resolutionNote,
-    resolvedValue: i.resolvedValue === null || i.resolvedValue === undefined ? null : String(i.resolvedValue),
+    resolvedValue: i.resolvedValue === null || i.resolvedValue === undefined ? null : scalarText(i.resolvedValue),
     resolvedAt: i.resolvedAt?.toISOString() ?? null,
     createdAt: i.createdAt.toISOString(),
   };
+}
+
+/** Text for a stored JSON value (suggestion and resolution values are strings or numbers). */
+function scalarText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
 }
 
 function displayValue(key: string, value: unknown): string {
@@ -56,11 +64,15 @@ function displayValue(key: string, value: unknown): string {
   if ((key === 'totalPrice' || key === 'depositRequired') && typeof value === 'number') {
     return `₦${value.toLocaleString('en-NG')}`;
   }
-  if (key === 'fabricSupplier') {
-    const v = String(value).toUpperCase();
-    return v === 'CUSTOMER' ? 'Customer provides the fabric' : v === 'STUDIO' ? 'Studio sources the fabric' : String(value);
+  if ((key === 'deliveryDate' || key === 'fittingDate') && typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return formatIsoDate(value);
   }
-  return String(value);
+  const text = scalarText(value);
+  if (key === 'fabricSupplier') {
+    const v = text.toUpperCase();
+    return v === 'CUSTOMER' ? 'Customer provides the fabric' : v === 'STUDIO' ? 'Studio sources the fabric' : text;
+  }
+  return text;
 }
 
 export function toSuggestionDto(s: SuggestionRow, content: BriefContent): SuggestionDto {
@@ -445,7 +457,7 @@ export class BriefsService {
         orderId,
         actor,
         type: 'SUGGESTION_ACCEPTED',
-        summary: `${fieldLabel(suggestion.fieldKey)}: ${edited ? 'edited and accepted' : 'accepted'} suggestion "${String(finalValue).slice(0, 80)}"`,
+        summary: `${fieldLabel(suggestion.fieldKey)}: ${edited ? 'edited and accepted' : 'accepted'} suggestion "${displayValue(suggestion.fieldKey, finalValue).slice(0, 80)}"`,
         data: { suggestionId },
       });
       await this.agreementState.refresh(tx, studioId, orderId);

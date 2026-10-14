@@ -32,6 +32,8 @@ const EnvSchema = z
     REDIS_URL: z.string().optional(),
     WORKER_CONCURRENCY: positiveInt.max(16).default(2),
     EXTRACTION_MAX_ATTEMPTS: positiveInt.max(10).default(3),
+    /** Delay before the first automatic retry; later retries back off ×4 (capped at 10 minutes). */
+    EXTRACTION_RETRY_BASE_MS: positiveInt.max(600_000).default(20_000),
 
     STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
     STORAGE_LOCAL_DIR: z.string().default('.local/storage'),
@@ -41,6 +43,8 @@ const EnvSchema = z
     S3_ACCESS_KEY_ID: z.string().optional(),
     S3_SECRET_ACCESS_KEY: z.string().optional(),
     S3_FORCE_PATH_STYLE: bool.default(true),
+    /** Create the private bucket on first use when it is missing. Defaults to true outside production. */
+    S3_CREATE_BUCKET: bool.optional(),
 
     AI_MODE: z.enum(['live', 'fixture', 'off']).default('live'),
     GEMINI_API_KEY: z.string().optional(),

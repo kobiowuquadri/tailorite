@@ -31,6 +31,7 @@ describe('public demo sandboxes', () => {
     const session = (await visitor.get('/api/auth/session').expect(200)).body;
     expect(session.user.isDemo).toBe(true);
     expect(session.studio.isDemo).toBe(true);
+    expect(session.studio.demoExpiresAt).not.toBeNull();
 
     const dashboard = (await visitor.get('/api/dashboard').expect(200)).body;
     expect(dashboard.counts).toEqual({
@@ -66,6 +67,10 @@ describe('public demo sandboxes', () => {
     expect(overview.latest.result.isExample).toBe(true);
     expect(overview.latest.result.evidenceRejected).toBe(0);
     expect(overview.latest.result.warnings.join(' ')).toMatch(/slit/i);
+    // The voice note had no transcript when the job started; the job's own transcript is part of
+    // what it processed, so the result is current.
+    expect(overview.latest.result.stale).toBe(false);
+    expect(overview.sourcesChangedSinceLatest).toBe(false);
 
     const brief = (await visitor.get(`/api/orders/${orderId}/brief`).expect(200)).body;
     const conflict = brief.issues.find((i: { kind: string }) => i.kind === 'CONFLICT');
@@ -109,5 +114,8 @@ describe('presenter demo seed', () => {
     const presenter = client(t.server);
     const login = await presenter.post('/api/auth/login', { email: 'demo@tailorite.local', password: 'demo-password-123' }).expect(200);
     expect(login.body.studio.name).toBe('Amina Atelier');
+    // The presenter studio is flagged as demo data but is not a temporary sandbox.
+    expect(login.body.studio.isDemo).toBe(true);
+    expect(login.body.studio.demoExpiresAt).toBeNull();
   });
 });

@@ -13,6 +13,7 @@ export function toStudioDto(s: Studio): StudioDto {
     timeZone: s.timeZone,
     measurementUnit: s.measurementUnit,
     isDemo: s.isDemo,
+    demoExpiresAt: s.demoExpiresAt?.toISOString() ?? null,
     createdAt: s.createdAt.toISOString(),
   };
 }

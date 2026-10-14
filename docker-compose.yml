@@ -1,0 +1,134 @@
+# Tailorite with Docker Compose. Expects the web app in the sibling folder ../tailorite-frontend.
+#
+#   Local infrastructure only (run the API, worker and web app with pnpm):
+#     docker compose up -d postgres redis storage
+#
+#   Whole stack on one origin (http://localhost:8080 by default):
+#     docker compose --env-file deploy/compose.env --profile app up -d --build
+#
+# The official MinIO community images stopped being published in October 2025, so private
+# storage uses Chainguard's MinIO build; any S3-compatible service works via S3_ENDPOINT.
+# Values below are local placeholders. Put real secrets in deploy/compose.env (never commit it).
+name: tailorite
+
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:8080}
+  TRUST_PROXY: "1"
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgresql://tailorite:${POSTGRES_PASSWORD:-tailorite-local}@postgres:5432/tailorite
+  DATABASE_POOL_MAX: "10"
+  SESSION_SECRET: ${SESSION_SECRET:-local-only-session-secret-change-me-0123456789}
+  COOKIE_SECURE: ${COOKIE_SECURE:-false}
+  JOB_QUEUE_BACKEND: redis
+  REDIS_URL: redis://redis:6379
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+  STORAGE_DRIVER: s3
+  S3_ENDPOINT: http://storage:9000
+  S3_REGION: us-east-1
+  S3_BUCKET: tailorite-private
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-tailorite-local}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-tailorite-local-secret}
+  S3_FORCE_PATH_STYLE: "true"
+  S3_CREATE_BUCKET: "true"
+  AI_MODE: ${AI_MODE:-live}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  DEMO_SANDBOX_ENABLED: ${DEMO_SANDBOX_ENABLED:-true}
+  ALLOW_DEMO_SEED: ${ALLOW_DEMO_SEED:-false}
+  DEMO_OWNER_PASSWORD: ${DEMO_OWNER_PASSWORD:-}
+
+services:
+  postgres:
+    image: postgres:18-bookworm
+    environment:
+      POSTGRES_USER: tailorite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tailorite-local}
+      POSTGRES_DB: tailorite
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C.UTF-8
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tailorite -d tailorite"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8-bookworm
+    # BullMQ requires noeviction; AOF keeps queued jobs across restarts (PostgreSQL stays the source of truth).
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  storage:
+    image: cgr.dev/chainguard/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-tailorite-local}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-tailorite-local-secret}
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+    volumes: ["storage-data:/data"]
+
+  migrate:
+    profiles: ["app"]
+    build: { context: ., target: build }
+    environment:
+      DATABASE_URL: postgresql://tailorite:${POSTGRES_PASSWORD:-tailorite-local}@postgres:5432/tailorite
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    profiles: ["app"]
+    build: { context: ., target: runtime }
+    image: tailorite-api:local
+    environment:
+      <<: *app-env
+      PORT: "4000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      storage: { condition: service_started }
+    restart: unless-stopped
+
+  worker:
+    profiles: ["app"]
+    image: tailorite-api:local
+    command: ["node", "--enable-source-maps", "dist/worker.js"]
+    environment: *app-env
+    healthcheck: { disable: true }
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+  web:
+    profiles: ["app"]
+    build:
+      context: ../tailorite-frontend
+      args: { API_INTERNAL_URL: "http://api:4000" }
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+  proxy:
+    profiles: ["app"]
+    image: caddy:2
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports: ["${PROXY_PORT:-8080}:80", "${PROXY_TLS_PORT:-8443}:443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [api, web]
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  storage-data:
+  caddy-data:

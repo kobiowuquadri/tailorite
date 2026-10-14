@@ -10,7 +10,8 @@ import { segmentSpans, type EvidenceSource } from '../ai/evidence.js';
 import { normalizeExtraction, type NormalizedResult } from '../ai/normalize.js';
 import { PROVIDER_MIME_BY_STORED } from '../sources/media.js';
 import { QueueService } from './queue.service.js';
-import { backoffMs, currentInputSet, type InputSource, type ResultValidation } from './extraction-common.js';
+import { AppConfig } from '../config/app-config.js';
+import { backoffMs, currentInputSet, processedInputSet, type InputSource, type ResultValidation } from './extraction-common.js';
 import { BriefContent } from '../contracts/brief.js';
 import type { TranscriptSegment } from '../contracts/sources.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -47,6 +48,7 @@ export class ExtractionProcessor {
     private readonly agreementState: AgreementStateService,
     private readonly providers: AiProviderFactory,
     private readonly queue: QueueService,
+    private readonly config: AppConfig,
   ) {}
 
   async process(jobId: string): Promise<'processed' | 'skipped'> {
@@ -190,6 +192,7 @@ export class ExtractionProcessor {
     await this.prisma.$transaction(
       async (tx) => {
         const existing = await tx.extractionResult.findUnique({ where: { jobId: job.id } });
+        const processed = await processedInputSet(tx, job.id, job.inputSources as InputSource[]);
         if (!existing) {
           await lockOrder(tx, job.studioId, job.orderId);
           const now = new Date();
@@ -198,7 +201,7 @@ export class ExtractionProcessor {
           const staleReason =
             draft.revision !== job.draftRevision
               ? 'The brief was edited while this was processing. Check each suggestion against the current values before accepting.'
-              : input.hash !== job.inputHash
+              : input.hash !== processed.hash
                 ? 'Sources were added or changed while this was processing. Process again to include them.'
                 : null;
           const { normalized } = outcome;
@@ -234,7 +237,7 @@ export class ExtractionProcessor {
               inputTokens: outcome.usage.inputTokens,
               outputTokens: outcome.usage.outputTokens,
               draftRevisionAtStart: job.draftRevision,
-              inputHash: job.inputHash,
+              inputHash: processed.hash,
             },
           });
           if (normalized.suggestions.length) {
@@ -275,7 +278,7 @@ export class ExtractionProcessor {
             orderId: job.orderId,
             actor: { type: 'SYSTEM', label: job.mode === 'FIXTURE' ? 'Demo fixture' : 'AI processing' },
             type: 'EXTRACTION_SUCCEEDED',
-            summary: `${job.mode === 'FIXTURE' ? 'Example results' : 'AI suggestions'} ready: ${normalized.suggestions.length} suggestion${normalized.suggestions.length === 1 ? '' : 's'}, ${normalized.issues.length} question${normalized.issues.length === 1 ? '' : 's'}${staleReason ? ' (brief changed during processing)' : ''}`,
+            summary: `${job.mode === 'FIXTURE' ? 'Example results' : 'AI suggestions'} ready: ${normalized.suggestions.length} suggestion${normalized.suggestions.length === 1 ? '' : 's'}, ${normalized.issues.length} question${normalized.issues.length === 1 ? '' : 's'}${staleReason ? ' (inputs changed during processing)' : ''}`,
             data: { jobId: job.id, model: outcome.model },
           });
           await this.agreementState.refresh(tx, job.studioId, job.orderId);
@@ -284,6 +287,9 @@ export class ExtractionProcessor {
           where: { id: job.id },
           data: {
             status: 'SUCCEEDED',
+            // Record what was actually processed, including transcripts this job produced.
+            inputHash: processed.hash,
+            inputSources: processed.sources,
             finishedAt: new Date(),
             durationMs,
             provider: provider.name,
@@ -322,7 +328,7 @@ export class ExtractionProcessor {
     });
 
     if (retry) {
-      const delay = backoffMs(fresh.attempts);
+      const delay = backoffMs(fresh.attempts, this.config.env.EXTRACTION_RETRY_BASE_MS);
       await this.prisma.$transaction([
         this.prisma.extractionJob.update({
           where: { id: job.id },

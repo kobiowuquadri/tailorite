@@ -123,7 +123,7 @@ describe('customer approval portal', () => {
         contentHash: version.contentHash,
       }),
     ]);
-    const statuses = results.map((r) => r.status).sort();
+    const statuses = results.map((r) => r.status).sort((a, b) => a - b);
     expect(statuses).toEqual([200, 409]);
     expect(await t.prisma.approvalEvent.count({ where: { orderId } })).toBe(1);
   });

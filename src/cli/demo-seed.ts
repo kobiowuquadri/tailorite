@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- command-line output for the person running the seed */
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { loadConfig } from '../bootstrap.js';

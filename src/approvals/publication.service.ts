@@ -6,7 +6,7 @@ import { AuditService } from '../audit/audit.service.js';
 import type { UserActor } from '../auth/decorators.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { AgreementStateService } from '../briefs/agreement-state.service.js';
-import { formatKobo, type Evidence } from '../contracts/brief.js';
+import { formatIsoDate, formatKobo, type Evidence } from '../contracts/brief.js';
 import type { PortalAccessPurpose, PublishInput, PublishResultDto, ShareLinkDto, SnapshotReference } from '../contracts/approvals.js';
 import { buildShareLink, buildSnapshot } from './snapshot.js';
 import { randomToken, sha256Hex } from '../common/security/tokens.js';
@@ -251,8 +251,8 @@ export class PublicationService {
           type: 'VERSION_PUBLISHED',
           summary:
             kind === 'REVISION'
-              ? `Change proposal shared as version ${versionNumber}: ${formatKobo(terms.totalPriceKobo)} (${change!.priceAdjustmentKobo >= 0 ? '+' : '−'}${formatKobo(Math.abs(change!.priceAdjustmentKobo))}), delivery ${terms.deliveryDate}`
-              : `Version ${versionNumber} shared for customer approval: ${formatKobo(terms.totalPriceKobo)}, delivery ${terms.deliveryDate}`,
+              ? `Change proposal shared as version ${versionNumber}: ${formatKobo(terms.totalPriceKobo)} (${change!.priceAdjustmentKobo >= 0 ? '+' : '−'}${formatKobo(Math.abs(change!.priceAdjustmentKobo))}), delivery ${formatIsoDate(terms.deliveryDate)}`
+              : `Version ${versionNumber} shared for customer approval: ${formatKobo(terms.totalPriceKobo)}, delivery ${formatIsoDate(terms.deliveryDate)}`,
           data: { versionId: version.id, versionNumber, contentHash: hash, accessId: access.id },
         });
         await this.agreementState.refresh(tx, studioId, orderId);

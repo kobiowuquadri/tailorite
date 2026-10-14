@@ -43,7 +43,8 @@ const isTextKey = (k: string) => (TEXT_FIELD_KEYS as readonly string[]).includes
 const TERMS_KEYS = new Set(['totalPrice', 'depositRequired', 'deliveryDate', 'fittingDate']);
 
 export function comparable(value: unknown): string {
-  return String(value ?? '')
+  const text = typeof value === 'string' ? value : value === null || value === undefined ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value as number | boolean);
+  return text
     .toLowerCase()
     .replace(/[‘’'"“”.,;:!?()]/g, '')
     .replace(/[-–—]/g, ' ')

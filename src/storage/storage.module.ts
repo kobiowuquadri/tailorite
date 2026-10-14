@@ -14,7 +14,7 @@ export function createStorage(config: AppConfig): StorageService {
       accessKeyId: e.S3_ACCESS_KEY_ID!,
       secretAccessKey: e.S3_SECRET_ACCESS_KEY!,
       forcePathStyle: e.S3_FORCE_PATH_STYLE,
-      createBucketIfMissing: !config.isProduction,
+      createBucketIfMissing: e.S3_CREATE_BUCKET ?? !config.isProduction,
     });
   }
   return new LocalStorageService(e.STORAGE_LOCAL_DIR);
