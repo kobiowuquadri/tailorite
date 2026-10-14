@@ -13,6 +13,11 @@ export type InputSource = {
 };
 
 /** The fixed input set a job processes: current sources and their current transcripts. */
+/** Jobs this deployment may work on: its own, plus unstamped jobs from before the `deployment` column. */
+export function ownJobs(deployment: string): Prisma.ExtractionJobWhereInput {
+  return { OR: [{ deployment: null }, { deployment }] };
+}
+
 export async function currentInputSet(db: Tx, orderId: string): Promise<{ sources: InputSource[]; hash: string; bytes: number }> {
   const rows = await db.sourceAsset.findMany({
     where: { orderId, removedAt: null },

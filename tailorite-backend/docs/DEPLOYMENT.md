@@ -65,6 +65,8 @@ In Render, set `APP_ORIGIN` to the exact Vercel URL (no trailing slash) and rede
 
 ### Before going live: things to know
 - **One database, five connections.** The live API uses 4. While it runs, do not also run the API/worker on your PC against the same database: set `DATABASE_URL` in your local `.env` back to `LOCAL_DATABASE_URL` (the embedded database) for everyday development.
+- **Jobs stay with the deployment that created them.** Each AI job is stamped with `APP_ORIGIN` (or `DEPLOYMENT_ID`), and a worker only takes its own jobs. Before this, a worker on a laptop pointed at the live database took live jobs and failed with "A source file could not be read from storage", because the files were in the live storage, not on the laptop.
+- **No Redis needed.** `JOB_QUEUE_BACKEND=database` queues jobs in PostgreSQL. Redis (for example Upstash) is used only with `JOB_QUEUE_BACKEND=redis` and a `rediss://` `REDIS_URL`; BullMQ keeps Redis busy even when idle, which uses up a free plan's command allowance.
 - **Distance to the database matters.** Every query is a network round trip. From Lagos to Clever Cloud (Paris) it is about 220 ms, so creating a demo sandbox locally took 210 s. Render in Frankfurt is close to the database, so expect seconds to tens of seconds (not yet measured there).
 - **Docker builds** need no `DATABASE_URL` (`prisma generate` runs without one); migrations do.
 - **Secrets** live only in the hosting dashboards and in git-ignored `.env` files. The repository is public.

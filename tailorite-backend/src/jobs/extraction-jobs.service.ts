@@ -110,6 +110,7 @@ export class ExtractionJobsService {
           idempotencyKey: input.idempotencyKey,
           maxAttempts: this.config.env.EXTRACTION_MAX_ATTEMPTS,
           createdById: actor.userId,
+          deployment: this.config.deploymentId,
         },
         include: jobInclude,
       });

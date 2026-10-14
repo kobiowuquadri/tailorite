@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { hostname } from 'node:os';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { AppConfig } from '../config/app-config.js';
+import { ownJobs } from './extraction-common.js';
 import { QueueService } from './queue.service.js';
 import { queueBackendLabel } from './queue.js';
 import { logger } from '../common/logging/json-logger.js';
@@ -29,7 +30,7 @@ export class RecoveryService {
 
     // Recover jobs whose worker died first, so they are re-dispatched in this same sweep.
     const expired = await this.prisma.extractionJob.findMany({
-      where: { status: 'RUNNING', leaseExpiresAt: { lt: new Date(now) } },
+      where: { status: 'RUNNING', leaseExpiresAt: { lt: new Date(now) }, AND: [ownJobs(this.config.deploymentId)] },
       take: 50,
     });
     for (const job of expired) {
@@ -73,6 +74,7 @@ export class RecoveryService {
         status: 'QUEUED',
         nextAttemptAt: { lte: new Date(dueBy) },
         OR: [{ dispatchedAt: null }, { dispatchedAt: { lt: new Date(dueBy - 2 * 60_000) } }],
+        AND: [ownJobs(this.config.deploymentId)],
       },
       orderBy: { nextAttemptAt: 'asc' },
       take: 50,
@@ -111,9 +113,9 @@ export class RecoveryService {
   /** Queue backlog measurement for logs/ops. */
   async backlog(): Promise<{ queued: number; running: number; oldestQueuedSeconds: number | null }> {
     const [queued, running, oldest] = await Promise.all([
-      this.prisma.extractionJob.count({ where: { status: 'QUEUED' } }),
-      this.prisma.extractionJob.count({ where: { status: 'RUNNING' } }),
-      this.prisma.extractionJob.findFirst({ where: { status: 'QUEUED' }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
+      this.prisma.extractionJob.count({ where: { status: 'QUEUED', AND: [ownJobs(this.config.deploymentId)] } }),
+      this.prisma.extractionJob.count({ where: { status: 'RUNNING', AND: [ownJobs(this.config.deploymentId)] } }),
+      this.prisma.extractionJob.findFirst({ where: { status: 'QUEUED', AND: [ownJobs(this.config.deploymentId)] }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
     ]);
     return {
       queued,

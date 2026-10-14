@@ -1,5 +1,6 @@
 import { Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import { AppConfig } from '../config/app-config.js';
+import { ownJobs } from './extraction-common.js';
 import { PrismaService } from '../common/prisma/prisma.service.js';
 import { createExtractionWorker, type ExtractionWorker } from './queue.js';
 import { ExtractionProcessor } from './extraction.processor.js';
@@ -72,7 +73,7 @@ export class WorkerRunner implements OnApplicationShutdown {
       const free = this.config.env.WORKER_CONCURRENCY - this.inFlight.size;
       if (free <= 0) return 0;
       const due = await this.prisma.extractionJob.findMany({
-        where: { status: 'QUEUED', nextAttemptAt: { lte: new Date() } },
+        where: { status: 'QUEUED', nextAttemptAt: { lte: new Date() }, AND: [ownJobs(this.config.deploymentId)] },
         orderBy: { nextAttemptAt: 'asc' },
         take: free,
         select: { id: true },

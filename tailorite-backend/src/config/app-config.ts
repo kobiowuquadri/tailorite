@@ -20,6 +20,11 @@ export class AppConfig {
     return this.env.NODE_ENV === 'production';
   }
 
+  /** Stamped on background jobs so a worker never takes another deployment's job (whose files it may not reach). */
+  get deploymentId(): string {
+    return this.env.DEPLOYMENT_ID ?? this.env.APP_ORIGIN;
+  }
+
   get isTest(): boolean {
     return this.env.NODE_ENV === 'test';
   }

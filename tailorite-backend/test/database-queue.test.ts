@@ -8,6 +8,7 @@ import { client, createOwner, startTestApp, type TestApp } from './helpers/app.j
 import { createOrder } from './helpers/fixtures.js';
 import { WorkerModule } from '../src/worker.module.js';
 import { WorkerRunner } from '../src/jobs/worker-runner.js';
+import { ExtractionProcessor } from '../src/jobs/extraction.processor.js';
 
 // JOB_QUEUE_BACKEND=database: no message queue at all — the worker polls the ExtractionJob table.
 // Used with small hosted databases whose connection limit cannot also carry a queue backend.
@@ -76,6 +77,20 @@ describe('database-polling job queue', () => {
       .toBe('SUCCEEDED');
     const row = await t.prisma.extractionJob.findUniqueOrThrow({ where: { id: job.id } });
     expect(row.attempts).toBe(1);
+    expect(row.deployment).toBe(t.config.deploymentId);
     expect(await runner.pollDueJobs()).toBe(0);
+  });
+
+  it('leaves jobs created by another deployment alone (for example a live job seen from a laptop)', async () => {
+    const { client: c } = await createOwner(t.server);
+    const { orderId } = await createOrder(c);
+    await c.post(`/api/orders/${orderId}/sources/text`, { text: 'Sleeves elbow length.', sender: 'Customer' }).expect(201);
+    const job = (await c.post(`/api/orders/${orderId}/extractions`, { idempotencyKey: crypto.randomUUID() }).expect(201)).body;
+    await t.prisma.extractionJob.update({ where: { id: job.id }, data: { deployment: 'https://another-deployment.example' } });
+
+    expect(await worker.get(WorkerRunner).pollDueJobs()).toBe(0);
+    expect(await worker.get(ExtractionProcessor).process(job.id)).toBe('skipped');
+    const row = await t.prisma.extractionJob.findUniqueOrThrow({ where: { id: job.id } });
+    expect(row).toMatchObject({ status: 'QUEUED', attempts: 0 });
   });
 });

@@ -457,6 +457,10 @@ model ExtractionJob {
   model          String?
   promptVersion  String?
   createdById    String?   @db.Uuid
+  /// Deployment that created the job (APP_ORIGIN unless DEPLOYMENT_ID is set). Workers only take their own
+  /// jobs, so a developer machine pointed at a shared database never takes a live job it cannot serve.
+  /// Null for jobs created before this column existed (any worker may take those).
+  deployment     String?
   createdAt      DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
 

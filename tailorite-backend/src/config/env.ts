@@ -34,6 +34,8 @@ const EnvSchema = z
     JOB_POLL_INTERVAL_MS: positiveInt.min(250).max(60_000).default(2000),
     /** Run the extraction worker inside the API process (single-service hosting, e.g. free tiers). */
     WORKER_IN_API: bool.default(false),
+    /** Workers only take jobs created by the same deployment (defaults to APP_ORIGIN). */
+    DEPLOYMENT_ID: z.string().trim().min(1).max(200).optional(),
     REDIS_URL: z.string().optional(),
     WORKER_CONCURRENCY: positiveInt.max(16).default(2),
     EXTRACTION_MAX_ATTEMPTS: positiveInt.max(10).default(3),

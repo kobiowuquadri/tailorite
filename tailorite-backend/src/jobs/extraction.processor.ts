@@ -11,7 +11,7 @@ import { normalizeExtraction, type NormalizedResult } from '../ai/normalize.js';
 import { PROVIDER_MIME_BY_STORED } from '../sources/media.js';
 import { QueueService } from './queue.service.js';
 import { AppConfig } from '../config/app-config.js';
-import { backoffMs, currentInputSet, processedInputSet, type InputSource, type ResultValidation } from './extraction-common.js';
+import { backoffMs, currentInputSet, ownJobs, processedInputSet, type InputSource, type ResultValidation } from './extraction-common.js';
 import { BriefContent } from '../contracts/brief.js';
 import type { TranscriptSegment } from '../contracts/sources.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -54,7 +54,7 @@ export class ExtractionProcessor {
   async process(jobId: string): Promise<'processed' | 'skipped'> {
     const now = new Date();
     const claimed = await this.prisma.extractionJob.updateMany({
-      where: { id: jobId, status: 'QUEUED', nextAttemptAt: { lte: new Date(now.getTime() + 1000) } },
+      where: { id: jobId, status: 'QUEUED', nextAttemptAt: { lte: new Date(now.getTime() + 1000) }, AND: [ownJobs(this.config.deploymentId)] },
       data: {
         status: 'RUNNING',
         attempts: { increment: 1 },
