@@ -16,7 +16,7 @@ export type StoredObject = {
  * after authorizing the studio session or customer portal scope.
  */
 export abstract class StorageService {
-  abstract readonly driver: 'local' | 's3';
+  abstract readonly driver: 'local' | 's3' | 'cloudinary';
   abstract put(key: string, body: Buffer, contentType: string): Promise<void>;
   abstract get(key: string, range?: ByteRange): Promise<StoredObject>;
   abstract getBuffer(key: string): Promise<Buffer>;

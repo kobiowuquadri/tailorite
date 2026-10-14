@@ -32,9 +32,10 @@ services:
       - key: COOKIE_SECURE
         value: "true"
       - key: STORAGE_DRIVER
-        value: s3
-      - key: S3_FORCE_PATH_STYLE
-        value: "true"
+        value: cloudinary
+      # Cloudinary's free plan caps raw files at 10 MB.
+      - key: UPLOAD_MAX_AUDIO_MB
+        value: "10"
       - key: AI_MODE
         value: live
       - key: DEMO_SANDBOX_ENABLED
@@ -46,15 +47,7 @@ services:
         sync: false
       - key: APP_ORIGIN
         sync: false
-      - key: S3_ENDPOINT
-        sync: false
-      - key: S3_REGION
-        sync: false
-      - key: S3_BUCKET
-        sync: false
-      - key: S3_ACCESS_KEY_ID
-        sync: false
-      - key: S3_SECRET_ACCESS_KEY
+      - key: CLOUDINARY_URL
         sync: false
       - key: GEMINI_API_KEY
         sync: false

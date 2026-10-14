@@ -40,7 +40,7 @@ const EnvSchema = z
     /** Delay before the first automatic retry; later retries back off ×4 (capped at 10 minutes). */
     EXTRACTION_RETRY_BASE_MS: positiveInt.max(600_000).default(20_000),
 
-    STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+    STORAGE_DRIVER: z.enum(['local', 's3', 'cloudinary']).default('local'),
     STORAGE_LOCAL_DIR: z.string().default('.local/storage'),
     S3_ENDPOINT: z.string().optional(),
     S3_REGION: z.string().default('us-east-1'),
@@ -50,6 +50,15 @@ const EnvSchema = z
     S3_FORCE_PATH_STYLE: bool.default(true),
     /** Create the private bucket on first use when it is missing. Defaults to true outside production. */
     S3_CREATE_BUCKET: bool.optional(),
+    /** Cloudinary: set CLOUDINARY_URL (cloudinary://<key>:<secret>@<cloud>) or the three parts. */
+    CLOUDINARY_URL: z.string().optional(),
+    CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    CLOUDINARY_API_KEY: z.string().optional(),
+    CLOUDINARY_API_SECRET: z.string().optional(),
+    CLOUDINARY_FOLDER: z
+      .string()
+      .regex(/^[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_-]+)*$/, 'letters, digits, "-", "_" and "/" only')
+      .default('tailorite'),
 
     AI_MODE: z.enum(['live', 'fixture', 'off']).default('live'),
     GEMINI_API_KEY: z.string().optional(),
@@ -91,12 +100,19 @@ const EnvSchema = z
         if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'is required when STORAGE_DRIVER=s3' });
       }
     }
+    if (env.STORAGE_DRIVER === 'cloudinary') {
+      for (const key of ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'] as const) {
+        if (!env[key]) {
+          ctx.addIssue({ code: 'custom', path: [key], message: 'is required when STORAGE_DRIVER=cloudinary (or set CLOUDINARY_URL)' });
+        }
+      }
+    }
     if (env.NODE_ENV === 'production') {
       if (env.STORAGE_DRIVER === 'local') {
         ctx.addIssue({
           code: 'custom',
           path: ['STORAGE_DRIVER'],
-          message: 'must be "s3" in production (local disk is not durable private object storage)',
+          message: 'must be "s3" or "cloudinary" in production (local disk is not durable private object storage)',
         });
       }
       if (/replace-with|change-me|placeholder/i.test(env.SESSION_SECRET)) {
@@ -134,7 +150,27 @@ export function withPlatformDefaults(source: Record<string, string | undefined>)
   }
   if (blank('S3_ACCESS_KEY_ID') && env.CELLAR_ADDON_KEY_ID) env.S3_ACCESS_KEY_ID = env.CELLAR_ADDON_KEY_ID;
   if (blank('S3_SECRET_ACCESS_KEY') && env.CELLAR_ADDON_KEY_SECRET) env.S3_SECRET_ACCESS_KEY = env.CELLAR_ADDON_KEY_SECRET;
+  // Cloudinary shows one "API environment variable": cloudinary://<api_key>:<api_secret>@<cloud_name>.
+  const cloudinary = parseCloudinaryUrl(env.CLOUDINARY_URL);
+  if (cloudinary) {
+    if (blank('CLOUDINARY_CLOUD_NAME')) env.CLOUDINARY_CLOUD_NAME = cloudinary.cloudName;
+    if (blank('CLOUDINARY_API_KEY')) env.CLOUDINARY_API_KEY = cloudinary.apiKey;
+    if (blank('CLOUDINARY_API_SECRET')) env.CLOUDINARY_API_SECRET = cloudinary.apiSecret;
+    if (blank('STORAGE_DRIVER')) env.STORAGE_DRIVER = 'cloudinary';
+  }
   return env;
+}
+
+export function parseCloudinaryUrl(value: string | undefined): { cloudName: string; apiKey: string; apiSecret: string } | null {
+  const text = value?.trim().replace(/^CLOUDINARY_URL=/, '');
+  if (!text) return null;
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'cloudinary:' || !url.hostname || !url.username || !url.password) return null;
+    return { cloudName: url.hostname, apiKey: decodeURIComponent(url.username), apiSecret: decodeURIComponent(url.password) };
+  } catch {
+    return null;
+  }
 }
 
 export function parseEnv(source: Record<string, string | undefined> = process.env): Env {

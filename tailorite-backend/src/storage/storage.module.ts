@@ -3,6 +3,7 @@ import { AppConfig } from '../config/app-config.js';
 import { StorageService } from './storage.service.js';
 import { LocalStorageService } from './local-storage.js';
 import { S3StorageService } from './s3-storage.js';
+import { CloudinaryStorageService } from './cloudinary-storage.js';
 
 export function createStorage(config: AppConfig): StorageService {
   const e = config.env;
@@ -15,6 +16,14 @@ export function createStorage(config: AppConfig): StorageService {
       secretAccessKey: e.S3_SECRET_ACCESS_KEY!,
       forcePathStyle: e.S3_FORCE_PATH_STYLE,
       createBucketIfMissing: e.S3_CREATE_BUCKET ?? !config.isProduction,
+    });
+  }
+  if (e.STORAGE_DRIVER === 'cloudinary') {
+    return new CloudinaryStorageService({
+      cloudName: e.CLOUDINARY_CLOUD_NAME!,
+      apiKey: e.CLOUDINARY_API_KEY!,
+      apiSecret: e.CLOUDINARY_API_SECRET!,
+      folder: e.CLOUDINARY_FOLDER,
     });
   }
   return new LocalStorageService(e.STORAGE_LOCAL_DIR);

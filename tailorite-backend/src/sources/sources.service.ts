@@ -273,8 +273,16 @@ export class SourcesService {
     const sourceId = randomUUID();
     const storageKey = sourceObjectKey(studioId, orderId, sourceId, 'original', sniffed.ext);
     const previewKey = preview ? sourceObjectKey(studioId, orderId, sourceId, 'preview', 'webp') : null;
-    await this.storage.put(storageKey, file.buffer, sniffed.mime);
-    if (preview && previewKey) await this.storage.put(previewKey, preview, 'image/webp');
+    try {
+      await this.storage.put(storageKey, file.buffer, sniffed.mime);
+      if (preview && previewKey) await this.storage.put(previewKey, preview, 'image/webp');
+    } catch (error) {
+      // Hosted storage can refuse a file the app itself accepts (for example a free plan's size cap).
+      if (/file size too large/i.test((error as Error).message)) {
+        throw Errors.payloadTooLarge('This file is larger than the storage service allows. Try a shorter recording or a smaller picture.');
+      }
+      throw error;
+    }
 
     try {
       return await this.prisma.$transaction(async (tx) => {

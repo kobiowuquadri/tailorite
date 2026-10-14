@@ -33,3 +33,30 @@ describe('environment from hosting add-ons', () => {
     expect(() => parseEnv({ ...base, NODE_ENV: 'production' })).toThrow(/STORAGE_DRIVER/);
   });
 });
+
+describe('Cloudinary storage settings', () => {
+  it('reads CLOUDINARY_URL and selects the Cloudinary driver when none is set', () => {
+    const env = parseEnv({ ...base, NODE_ENV: 'production', CLOUDINARY_URL: 'cloudinary://123456:s3cr%2Bet@my-cloud' });
+    expect(env.STORAGE_DRIVER).toBe('cloudinary');
+    expect(env.CLOUDINARY_CLOUD_NAME).toBe('my-cloud');
+    expect(env.CLOUDINARY_API_KEY).toBe('123456');
+    expect(env.CLOUDINARY_API_SECRET).toBe('s3cr+et');
+    expect(env.CLOUDINARY_FOLDER).toBe('tailorite');
+  });
+
+  it('accepts the value pasted with its "CLOUDINARY_URL=" prefix, and explicit parts win', () => {
+    const env = parseEnv({
+      ...base,
+      STORAGE_DRIVER: 'cloudinary',
+      CLOUDINARY_URL: 'CLOUDINARY_URL=cloudinary://key:secret@cloud-a',
+      CLOUDINARY_CLOUD_NAME: 'cloud-b',
+    });
+    expect(env.CLOUDINARY_CLOUD_NAME).toBe('cloud-b');
+    expect(env.CLOUDINARY_API_KEY).toBe('key');
+  });
+
+  it('requires credentials for the Cloudinary driver', () => {
+    expect(() => parseEnv({ ...base, STORAGE_DRIVER: 'cloudinary' })).toThrow(/CLOUDINARY_API_SECRET/);
+    expect(() => parseEnv({ ...base, STORAGE_DRIVER: 'cloudinary', CLOUDINARY_URL: 'https://not-cloudinary' })).toThrow(/CLOUDINARY_CLOUD_NAME/);
+  });
+});
