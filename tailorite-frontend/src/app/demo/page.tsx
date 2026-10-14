@@ -8,6 +8,7 @@ import { ArrowRight, FlaskConical, ShieldCheck, Sparkles, Users } from "lucide-r
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { DemoGuide } from "@/components/demo/demo-guide";
 import { api } from "@/lib/api";
 import type { DemoSessionDto } from "@/contracts/timeline";
 
@@ -84,6 +85,12 @@ export default function DemoPage() {
               {error}
             </p>
           ) : null}
+          {busy ? (
+            <p role="status" className="rounded-lg bg-blue-tint p-3 text-sm text-blue-ink">
+              Setting up your private demo studio with six synthetic orders. On the free server this can take up to a minute — please
+              keep this page open.
+            </p>
+          ) : null}
           <div className="flex flex-wrap items-center gap-3">
             <Button size="lg" className="h-12 px-5 text-base" onClick={start} disabled={busy}>
               {busy ? <Spinner /> : null} Start the demo <ArrowRight />
@@ -93,9 +100,25 @@ export default function DemoPage() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Tip: open a customer review link from the demo in a private window or on your phone to see the approval screen as a customer would.
+            No sign-up or password needed. If the page takes a moment to start, the free server is waking up — give it up to a minute.
           </p>
         </div>
+
+        <section aria-labelledby="test-steps" className="mt-6 space-y-4 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
+          <div className="space-y-1">
+            <h2 id="test-steps" className="text-lg font-semibold">
+              What to test (about 5 minutes)
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              The same steps are available inside the demo under “How to test”. You play both sides: the tailor in this window, the customer
+              in a private window or on your phone.
+            </p>
+          </div>
+          <DemoGuide />
+          <Button size="lg" className="h-11" onClick={start} disabled={busy}>
+            {busy ? <Spinner /> : null} Start the demo <ArrowRight />
+          </Button>
+        </section>
       </main>
     </div>
   );

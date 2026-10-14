@@ -269,7 +269,7 @@ export class PublicationService {
           }),
         };
       },
-      { timeout: 20_000 },
+      { timeout: 30_000 },
     );
     const version = await this.prisma.briefVersion.findUniqueOrThrow({ where: { id: versionId }, include: versionSummaryInclude });
     const order = await this.prisma.order.findUniqueOrThrow({ where: { id: orderId }, select: { activeVersionId: true } });

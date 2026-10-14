@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   FlaskConical,
+  ListChecks,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -16,7 +17,8 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DemoGuide } from "@/components/demo/demo-guide";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/common/states";
 import { api, isApiError } from "@/lib/api";
@@ -85,18 +87,34 @@ function AccountBlock({ session }: { session: SessionDto }) {
 
 function DemoBanner({ sandbox }: { sandbox: boolean }) {
   return (
-    <div className="flex items-start gap-2 border-b border-[#f6dfa3] bg-amber-tint px-4 py-2 text-sm text-amber-ink">
-      <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#f6dfa3] bg-amber-tint px-4 py-2 text-sm text-amber-ink">
+      <FlaskConical className="size-4 shrink-0" aria-hidden="true" />
       {sandbox ? (
-        <p>
+        <p className="min-w-0 flex-1">
           You are exploring a demo studio with <strong>synthetic data</strong>. Your changes stay in this private sandbox
           and are deleted automatically.
         </p>
       ) : (
-        <p>
+        <p className="min-w-0 flex-1">
           Demo studio with <strong>synthetic data</strong> — every customer and order here is fictional.
         </p>
       )}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button size="sm" variant="outline" className="h-8 border-[#f6dfa3] bg-white text-amber-ink hover:bg-white/80">
+            <ListChecks /> How to test
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>How to test Tailorite</SheetTitle>
+            <SheetDescription>
+              About 5 minutes. You play the tailor here and the customer in a private window or on your phone.
+            </SheetDescription>
+          </SheetHeader>
+          <DemoGuide compact className="px-4 pb-6" />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

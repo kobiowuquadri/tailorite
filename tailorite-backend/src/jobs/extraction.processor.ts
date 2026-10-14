@@ -301,7 +301,7 @@ export class ExtractionProcessor {
           },
         });
       },
-      { timeout: 20_000 },
+      { timeout: 30_000 },
     );
   }
 

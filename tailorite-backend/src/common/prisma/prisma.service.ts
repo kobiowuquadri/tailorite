@@ -14,6 +14,9 @@ export class PrismaService extends PrismaClient implements OnModuleDestroy {
         connectionTimeoutMillis: 10_000,
         idleTimeoutMillis: 30_000,
       }),
+      // Hosted databases add network latency to every statement and small plans allow only a
+      // couple of pooled connections, so allow longer transactions and waits than Prisma's 5 s / 2 s.
+      transactionOptions: { timeout: 30_000, maxWait: 15_000 },
     });
   }
 

@@ -78,6 +78,13 @@ export default function LoginPage() {
           Create an account
         </Link>
       </p>
+      <p className="rounded-lg bg-canvas p-3 text-center text-sm text-muted-foreground">
+        Just want to try it?{" "}
+        <Link href="/demo" className="font-medium text-primary underline-offset-4 hover:underline">
+          Explore the demo
+        </Link>{" "}
+        — no account or password needed, with a step-by-step test guide.
+      </p>
     </div>
   );
 }

@@ -49,6 +49,11 @@ Walked through in Chromium with screenshots: demo sandbox, example extraction, c
 - `prisma migrate deploy`: 4 migrations applied; `prisma migrate status`: up to date; 8/8 core tables, 12 triggers and the 4 guard functions present.
 - API and worker run locally against it with `DATABASE_POOL_MAX=2`, `JOB_QUEUE_BACKEND=database`: `/api/health/ready` ok (database, queue "Job table polling"); 3 connections held by API + worker. No application data was written (the test worker's heartbeat row was removed).
 
+## Local API against the hosted database, 2026-10-14
+- Round trip from the development PC (Lagos) to Clever Cloud PostgreSQL (Paris): median 217 ms.
+- Creating a demo sandbox first failed: a transaction exceeded Prisma's default 5 s limit. Transaction limits were raised to 30 s (15 s to obtain a connection); afterwards the sandbox was created successfully in 210 s.
+- `prisma generate` now runs without `DATABASE_URL` (Docker image builds failed with "Cannot resolve environment variable: DATABASE_URL"); `migrate status` without it gives a clear error.
+
 ## Single-process mode (free hosting), 2026-10-14
 Only the API process running with `WORKER_IN_API=true` and `JOB_QUEUE_BACKEND=database` (local database, separate worker stopped): a demo sandbox's example extraction went from queued to succeeded in about 1 second, and Settings reported the worker online.
 

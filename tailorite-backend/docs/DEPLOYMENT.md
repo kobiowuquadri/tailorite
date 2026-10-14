@@ -41,6 +41,12 @@ Alternative: Supabase Storage, 1 GB free; endpoint `https://<project-ref>.storag
 ### 4. Connect the two
 In Render, set `APP_ORIGIN` to the exact Vercel URL (no trailing slash) and redeploy. Customer links and the CSRF origin check use it.
 
+### Before going live: things to know
+- **One database, five connections.** The live API uses 4. While it runs, do not also run the API/worker on your PC against the same database: set `DATABASE_URL` in your local `.env` back to `LOCAL_DATABASE_URL` (the embedded database) for everyday development.
+- **Distance to the database matters.** Every query is a network round trip. From Lagos to Clever Cloud (Paris) it is about 220 ms, so creating a demo sandbox locally took 210 s. Render in Frankfurt is close to the database, so expect seconds to tens of seconds (not yet measured there).
+- **Docker builds** need no `DATABASE_URL` (`prisma generate` runs without one); migrations do.
+- **Secrets** live only in the hosting dashboards and in git-ignored `.env` files. The repository is public.
+
 ### 5. Verify
 - Open the Vercel URL (the first request wakes Render, so allow a minute), sign up, create an order, upload a picture and a voice note larger than 5 MB (confirms uploads pass through the proxy), share it and approve from a phone.
 - Settings > AI availability shows "Background worker is running".

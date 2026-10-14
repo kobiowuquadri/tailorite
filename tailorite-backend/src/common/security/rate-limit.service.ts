@@ -14,7 +14,8 @@ export const RATE_LIMITS = {
   portalChangePerAccess: { limit: 10, windowSeconds: 60 * 60 },
   uploadsPerStudio: { limit: 120, windowSeconds: 60 * 60 },
   extractionPerStudio: { limit: 20, windowSeconds: 60 * 60 },
-  demoPerIp: { limit: 6, windowSeconds: 60 * 60 },
+  // Generous: judges and testers at one venue often share a single public IP.
+  demoPerIp: { limit: 30, windowSeconds: 60 * 60 },
 } satisfies Record<string, RateLimitRule>;
 
 /**

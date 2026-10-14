@@ -409,7 +409,7 @@ export class PortalService {
         }
         await this.agreementState.refresh(tx, order.studioId, order.id);
       },
-      { timeout: 15_000 },
+      { timeout: 30_000 },
     );
     return this.review(accessId);
   }

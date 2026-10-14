@@ -1,6 +1,7 @@
 // Starts a local PostgreSQL server for development without Docker.
 // Uses real PostgreSQL binaries shipped through the `embedded-postgres` npm package.
-// Data persists in .local/postgres. Credentials/port/database come from DATABASE_URL.
+// Data persists in .local/postgres. Credentials/port/database come from LOCAL_DATABASE_URL
+// (set it when DATABASE_URL points at a hosted database) or else DATABASE_URL.
 //
 //   pnpm db:local        # runs in the foreground; Ctrl+C stops the server cleanly
 import 'dotenv/config';
@@ -11,7 +12,7 @@ import pg from 'pg';
 import EmbeddedPostgres from 'embedded-postgres';
 import { pgIsRunning, pgStart, pgStop } from './pg-control.mjs';
 
-const url = process.env.DATABASE_URL;
+const url = process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL;
 if (!url) {
   console.error('DATABASE_URL is not set. Copy .env.example to .env first.');
   process.exit(1);
@@ -19,7 +20,10 @@ if (!url) {
 
 const parsed = new URL(url);
 if (!['localhost', '127.0.0.1', '::1'].includes(parsed.hostname)) {
-  console.error(`DATABASE_URL points at "${parsed.hostname}". db:local only starts a server on localhost.`);
+  console.error(
+    `DATABASE_URL points at "${parsed.hostname}". db:local only starts a server on localhost; ` +
+      'set LOCAL_DATABASE_URL (e.g. postgresql://tailorite:tailorite@localhost:5432/tailorite) to run one anyway.',
+  );
   process.exit(1);
 }
 const port = Number(parsed.port || 5432);
