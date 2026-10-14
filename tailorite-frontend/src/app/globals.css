@@ -115,23 +115,128 @@
   }
 }
 
+/* Motion: short and purposeful — entrances, staggered lists, hover feedback, slow image drift.
+   Everything below is switched off for people who prefer reduced motion. */
+@keyframes tl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tl-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes tl-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tl-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tl-drift {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes tl-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Entrance; set --i on siblings (0, 1, 2…) to stagger them by 70 ms. "backwards" holds the first frame
+   during the delay, then releases the element so hover transforms still apply. */
+@utility animate-fade-up {
+  animation: tl-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@utility animate-fade-in {
+  animation: tl-fade-in 0.5s ease-out backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@utility animate-scale-in {
+  animation: tl-scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@utility animate-page-in {
+  animation: tl-page-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+/* Slow settle for large photos (Ken Burns style). */
+@utility animate-drift {
+  animation: tl-drift 18s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@utility animate-float {
+  animation: tl-float 7s ease-in-out infinite;
+}
+/* Reveal sections as they scroll into view, where scroll-driven animations are supported. */
+@utility reveal {
+  @supports (animation-timeline: view()) {
+    animation: tl-fade-up linear backwards;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+}
+/* Subtle lift for clickable cards. */
+@utility hover-lift {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -14px rgb(11 27 51 / 0.28);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .reveal {
+    animation: none !important;
+  }
+  .hover-lift:hover {
+    transform: none;
   }
 }
 
 /* Print / "Save as PDF" */
-@page {
-  size: A4;
-  margin: 14mm 12mm;
-}
-
 @page {
   size: A4;
   margin: 14mm 14mm 16mm;

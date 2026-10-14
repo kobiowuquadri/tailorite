@@ -212,7 +212,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Sheet>
           </div>
         </header>
-        <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:py-8">
+        <main id="main" className="w-full flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-12">
           {children}
         </main>
       </div>

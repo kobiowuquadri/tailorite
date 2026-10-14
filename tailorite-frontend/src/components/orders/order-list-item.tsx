@@ -29,7 +29,7 @@ export function OrderListItem({ order, timeZone }: { order: OrderSummaryDto; tim
   return (
     <Link
       href={orderHref(order)}
-      className="group block rounded-xl border border-border bg-white p-4 transition-colors hover:border-primary/40 hover:bg-[#fbfcff] focus-visible:border-primary"
+      className="group hover-lift block rounded-xl border border-border bg-white p-4 hover:border-primary/40 hover:bg-[#fbfcff] focus-visible:border-primary"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">

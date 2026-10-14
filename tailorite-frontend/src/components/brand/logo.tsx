@@ -18,11 +18,11 @@ export function LogoMark({ className }: { className?: string }) {
 }
 
 /** Text wordmark (no brand asset files were supplied for this release). */
-export function Logo({ className, markClassName }: { className?: string; markClassName?: string }) {
+export function Logo({ className, markClassName, light = false }: { className?: string; markClassName?: string; light?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       <LogoMark className={markClassName} />
-      <span className="text-lg font-bold tracking-tight text-foreground">Tailorite</span>
+      <span className={cn("text-lg font-bold tracking-tight", light ? "text-white" : "text-foreground")}>Tailorite</span>
     </span>
   );
 }
