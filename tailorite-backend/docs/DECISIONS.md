@@ -50,3 +50,6 @@ On Clever Cloud, linked add-ons inject `POSTGRESQL_ADDON_URI` and `CELLAR_ADDON_
 
 ## D15 — TLS to the hosted database without certificate verification
 Clever Cloud presents a self-signed certificate, so `sslmode=require` (libpq semantics) is used: traffic is encrypted but the server certificate is not verified. Verifying it would need the provider's CA certificate (`sslrootcert`).
+
+## D16 — Zero-cost deployment
+No hosting budget. The free combination is Vercel (web), one Render free web service (API with the worker in the same process via `WORKER_IN_API=true`; Render has no free background workers), the existing Clever Cloud DEV PostgreSQL, Backblaze B2 for files (10 GB free, no card) and the Gemini free tier. Koyeb was rejected because it now requires a card; Render's free PostgreSQL expires after 30 days, so it is not used. `render.yaml` at the repository root describes the Render service.

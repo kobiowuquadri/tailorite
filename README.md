@@ -9,4 +9,4 @@ Tailorite helps independent tailors turn a customer's WhatsApp messages, referen
 | [`tailorite-backend/`](tailorite-backend) | NestJS API and extraction worker, Prisma schema and migrations, Docker/Compose, and all project documentation ([README](tailorite-backend/README.md), [docs](tailorite-backend/docs)) |
 | [`tailorite-frontend/`](tailorite-frontend) | Next.js web app: studio screens, customer review page, print views, Playwright tests ([README](tailorite-frontend/README.md)) |
 
-Start with the [backend README](tailorite-backend/README.md) for setup, the demo seed and test commands, and [`docs/DEPLOYMENT.md`](tailorite-backend/docs/DEPLOYMENT.md) for deployment. All demo data is synthetic.
+Start with the [backend README](tailorite-backend/README.md) for setup, the demo seed and test commands, and [`docs/DEPLOYMENT.md`](tailorite-backend/docs/DEPLOYMENT.md) for deployment: the **Free path** uses Vercel, Render (`render.yaml`), PostgreSQL and Backblaze B2. All demo data is synthetic.

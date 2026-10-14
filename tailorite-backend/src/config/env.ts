@@ -32,6 +32,8 @@ const EnvSchema = z
      *  ExtractionJob table directly (no extra connections; for small databases with tight limits). */
     JOB_QUEUE_BACKEND: z.enum(['redis', 'postgres', 'database']).default('postgres'),
     JOB_POLL_INTERVAL_MS: positiveInt.min(250).max(60_000).default(2000),
+    /** Run the extraction worker inside the API process (single-service hosting, e.g. free tiers). */
+    WORKER_IN_API: bool.default(false),
     REDIS_URL: z.string().optional(),
     WORKER_CONCURRENCY: positiveInt.max(16).default(2),
     EXTRACTION_MAX_ATTEMPTS: positiveInt.max(10).default(3),

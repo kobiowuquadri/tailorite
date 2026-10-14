@@ -40,7 +40,8 @@ Latest results: backend 54 tests passed, lint 0 findings, typecheck clean; web l
 ## Deployment (Clever Cloud) — in progress
 - 2026-10-14: production PostgreSQL (Clever Cloud DEV plan, 5 connections, PostgreSQL 15) inspected and migrated; settings in `docs/DEPLOYMENT.md` (Path A) verified locally against it. The connection string lives only in `tailorite-backend/.env.production` (git-ignored) — never commit it.
 - 2026-10-14: public repository created and pushed: https://github.com/kobiowuquadri/tailorite (verified that no `.env*` files are published).
-- Still to do: Cellar add-on + bucket, the two Node.js apps (`tailorite-api`, `tailorite-web`), `GEMINI_API_KEY`, then the verification checklist.
+- 2026-10-14: no budget, so the free path was chosen (Vercel + Render free + Clever Cloud DEV PostgreSQL + Backblaze B2 + Gemini free tier); `render.yaml` added; `WORKER_IN_API` lets one free service run API + worker.
+- Still to do (needs the team's accounts): Backblaze bucket + key, Render Blueprint, Vercel project, `GEMINI_API_KEY`, then the checks in `docs/DEPLOYMENT.md` > Free path.
 
 ## Blockers (need the team)
 

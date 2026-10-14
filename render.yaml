@@ -1,0 +1,60 @@
+# Free hosting for the Tailorite API (render.com → New → Blueprint → this repository).
+# One free web service runs the API and the extraction worker together (Render's free tier has no
+# background workers). The web app is deployed separately (Vercel). Full guide:
+# tailorite-backend/docs/DEPLOYMENT.md → "Free path".
+services:
+  - type: web
+    name: tailorite-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: tailorite-backend
+    # NODE_ENV=production would make pnpm skip devDependencies, which the build needs.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    startCommand: pnpm db:migrate && node --enable-source-maps dist/main.js
+    healthCheckPath: /api/health/live
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: WORKER_IN_API
+        value: "true"
+      - key: JOB_QUEUE_BACKEND
+        value: database
+      - key: WORKER_CONCURRENCY
+        value: "1"
+      - key: DATABASE_POOL_MAX
+        value: "2"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: STORAGE_DRIVER
+        value: s3
+      - key: S3_FORCE_PATH_STYLE
+        value: "true"
+      - key: AI_MODE
+        value: live
+      - key: DEMO_SANDBOX_ENABLED
+        value: "true"
+      - key: SESSION_SECRET
+        generateValue: true
+      # Asked for when the Blueprint is created (never committed):
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
