@@ -1,0 +1,6 @@
+# Previous per-folder git histories (kept locally after merging into this repository)
+.repo-backups/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
