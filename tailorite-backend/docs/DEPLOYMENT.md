@@ -201,6 +201,7 @@ It only creates or resets the flagged demo studio. Set `ALLOW_DEMO_SEED=false` a
 ## Migrations
 - Forward-only Prisma migrations in `prisma/migrations`, applied by the `migrate` service on every `up`. They are additive so far; the integrity-guard migration installs triggers and CHECK constraints.
 - Manual run: `docker compose --env-file deploy/compose.env run --rm migrate`.
+- The Docker image also applies pending migrations when the API container starts, before it takes traffic (`MIGRATE_ON_START=false` skips this). Hosts that run the image directly, such as Render with a Dockerfile, therefore stay in step with the code. If a migration fails, the container exits and the host keeps the previous version running. The Render blueprint's native start command (`pnpm db:migrate && node dist/main.js`) does the same.
 
 ## Health checks
 - `GET /api/health/live` — process up (used by the container health check).
