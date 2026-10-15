@@ -325,6 +325,7 @@ export class ExtractionProcessor {
       errorCode: err.code,
       willRetry: retry,
       ...(err.code === 'INTERNAL' ? { error: (error as Error)?.message } : {}),
+      ...(err.detail ? { providerError: err.detail } : {}),
     });
 
     if (retry) {

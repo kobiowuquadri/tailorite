@@ -73,6 +73,8 @@ export class AiProviderError extends Error {
     public readonly code: AiErrorCode,
     message: string,
     public readonly retryable: boolean,
+    /** The provider's own error text, for server logs only (never shown to users, never customer content). */
+    public readonly detail?: string,
   ) {
     super(message);
     this.name = 'AiProviderError';

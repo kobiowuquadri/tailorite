@@ -40,15 +40,17 @@ export function classifyGeminiError(error: unknown): AiProviderError {
   }
   if (error instanceof ApiError) {
     const s = error.status;
-    if (s === 429) return new AiProviderError('RATE_LIMITED', 'The AI service is busy right now.', true);
+    // Gemini's error text names the offending argument or limit; it is logged, not shown.
+    const detail = `HTTP ${s}: ${String(error.message).slice(0, 500)}`;
+    if (s === 429) return new AiProviderError('RATE_LIMITED', 'The AI service is busy right now.', true, detail);
     if (s === 401 || s === 403) {
-      return new AiProviderError('NOT_CONFIGURED', 'The AI service rejected the configured API key.', false);
+      return new AiProviderError('NOT_CONFIGURED', 'The AI service rejected the configured API key.', false, detail);
     }
-    if (s === 404) return new AiProviderError('MODEL_NOT_FOUND', 'The configured AI model is not available.', false);
+    if (s === 404) return new AiProviderError('MODEL_NOT_FOUND', 'The configured AI model is not available.', false, detail);
     if (s === 400) {
-      return new AiProviderError('INVALID_REQUEST', 'The AI service could not process these sources (for example an unsupported file).', false);
+      return new AiProviderError('INVALID_REQUEST', 'The AI service could not process these sources (for example an unsupported file).', false, detail);
     }
-    if (s >= 500) return new AiProviderError('PROVIDER_UNAVAILABLE', 'The AI service is temporarily unavailable.', true);
+    if (s >= 500) return new AiProviderError('PROVIDER_UNAVAILABLE', 'The AI service is temporarily unavailable.', true, detail);
   }
   if (/fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|socket/i.test((error as Error)?.message ?? '')) {
     return new AiProviderError('NETWORK', 'Could not reach the AI service.', true);

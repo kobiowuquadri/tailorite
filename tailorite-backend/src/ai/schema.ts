@@ -77,7 +77,9 @@ export function toGeminiJsonSchema(schema: z.ZodType): Record<string, unknown> {
     if (!node || typeof node !== 'object') return node;
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-      if (key === '$schema' || key === 'additionalProperties') continue;
+      // Gemini answers 400 INVALID_ARGUMENT when array length limits are present (seen with gemini-3.8-flash,
+      // October 2026). The Zod schemas still enforce every limit on the parsed response.
+      if (key === '$schema' || key === 'additionalProperties' || key === 'maxItems' || key === 'minItems') continue;
       if (key === 'const') {
         out.enum = [value];
         continue;
